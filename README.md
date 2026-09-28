@@ -6,18 +6,18 @@ Extensible computational workflows for photovoltaic (PV) energy simulation
 
 Create an alternative to `pvlib`'s
 [`ModelChain`](https://github.com/pvlib/pvlib-python/blob/main/pvlib/modelchain.py)
-computational workflow that also accomodates plugging in component-model functions
+computational workflow that also accommodates plugging in component-model functions
 beyond those provided by `pvlib-python`. The approach here aims to be top down
 (workflows focused), rather than bottom up (algorithm focused).
 
 ### Design Principles
 
 To acheive the above goal, our approach uses the transformation of data as value
-objects (validated, frozen dataclasses) by functions (not class methods!) that satisfy
-well defined `typing.Protocol`s. Please be patient as we work out how to best combine
-the value-object pattern with Python's `typing.Protocol`, as interfaces in Python are
-not conventionally emphasized as much as they are in other languages. Composition of
-value objects is greatly preferred over class inheritance.
+objects (validated, frozen dataclasses that include units) by functions (not class
+methods!) that satisfy well defined `typing.Protocol`s. Please be patient as we work out
+how to best combine the value-object pattern with Python's `typing.Protocol`, as
+interfaces in Python are not conventionally emphasized as much as they are in other
+languages. Composition of value objects is greatly preferred over class inheritance.
 
 The code is also array-implementation agnostic via the Python Array API. In particular,
 `pandas` and its alternatives are avoided, and a rather simple, yet portable, approach
