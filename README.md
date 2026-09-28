@@ -16,20 +16,29 @@ To acheive the above goal, our approach uses the transformation of data as value
 objects (validated, frozen dataclasses) by functions (not class methods!) that satisfy
 well defined `typing.Protocol`s. Please be patient as we work out how to best combine
 the value-object pattern with Python's `typing.Protocol`, as interfaces in Python are
-not conventionally emphasized as much as they are in other languages. 
+not conventionally emphasized as much as they are in other languages. Composition of
+value objects is greatly preferred over class inheritance.
 
-All interfaces are typed, and the code is also array-implementation agnostic via the
-Python Array API. In particular, `pandas` and its alternatives are avoided, and a rather
-simple, yet portable, approach is taken to timestamp sequences. Also, true data
-immutability can be elusive in Python, but we will try our best. We shall see if
-performance suffers...
+The code is also array-implementation agnostic via the Python Array API. In particular,
+`pandas` and its alternatives are avoided, and a rather simple, yet portable, approach
+is taken to timestamp sequences, which are not (yet?) supported by the Python Array API.
+All interfaces have type hints, but hinting array shapes (and validating broadcast
+compatability) is still TBD. Also, true data immutability can be elusive in Python, but
+we will try our best. We shall see if/where performance suffers...
 
 For some background on these ideas, see
 - https://youtu.be/CWYwz3iV1g0?si=wff1cOgKQfQv9VyN
 - https://youtu.be/kDDCKwP7QgQ?si=hGj9B9wuZxWC8Q7q
 - https://data-apis.org/array-api/latest/
 
-Also, for everyone's sanity, the `pvlib` version is pinned in the reference usage.
+The core data structures and interfaces are defined in the `src/pv_workflows` package.
+
+The reference usage example, i.e., a `pvlib-python` interface to `pv_workflows`, is
+defined in the `src/pv_workflows_pvlib` package and demonstrated in
+`examples/getting_started.py`.
+
+Lastly, for everyone's sanity, the `pvlib` version is pinned. It is not this project's
+intention to chase versioning issues.
 
 ## Getting Started
 
@@ -39,12 +48,6 @@ If you're feeling brave, then try to install the package and from the repo root 
 ```terminal
 uv run examples/getting_started.py
 ```
-
-The core data structures and interfaces are defined in the `src/pv_workflows` package.
-
-The reference usage example, i.e., a `pvlib-python` interface to `pv_workflows`, is
-defined in the `src/pv_workflows_pvlib` package. Usage is demonstrated in
-`examples/getting_started.py`.
 
 ## Development
 
