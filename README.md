@@ -16,6 +16,12 @@ If you're feeling brave, then try to install the package and from the repo root 
 uv run examples/getting_started.py
 ```
 
+The core data structures and interfaces are defined in the `src/pv_workflows` package.
+
+The reference usage example, i.e., a `pvlib-python` interface to `pv_workflows`, is
+defined in the `src/pv_workflows_pvlib` package. Usage is demonstrated in
+`examples/getting_started.py`.
+
 ## Development
 
 Uses `uv` with the `setuptools` build backend. 

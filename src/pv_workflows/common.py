@@ -1,12 +1,12 @@
 """Common items."""
 
-from collections.abc import Sequence
-from dataclasses import dataclass
 import datetime
-from functools import cached_property
 import math
 import typing
 import zoneinfo
+from collections.abc import Sequence
+from dataclasses import dataclass
+from functools import cached_property
 
 from array_api.latest import Array
 
@@ -39,7 +39,7 @@ class Timestamps:
         if len(self.sequence) == 0:
             raise ValueError("Timestamps sequence is empty.")
 
-        tzinfos = set(timestamp.tzinfo for timestamp in self.sequence)
+        tzinfos = {timestamp.tzinfo for timestamp in self.sequence}
 
         if len(tzinfos) > 1:
             raise ValueError("Multiple timezones specified in timestamp sequence.")

@@ -1,17 +1,28 @@
-from dataclasses import asdict
 import datetime
 import zoneinfo
+from dataclasses import asdict
 
 import numpy
-
-# import pandas
 import pvlib
 
 import pv_workflows.common
-import pv_workflows.irradiance
 import pv_workflows.location
 import pv_workflows.weather
+import pv_workflows_pvlib.irradiance
+import pv_workflows_pvlib.location
 
+# print(
+#     type(
+#         pandas.date_range(
+#             start="2026-01-24 12:00:00",
+#             end="2026-01-24 12:00:00",
+#             freq="60min",
+#             tz="America/Denver",
+#         )
+#         .to_pydatetime()
+#         .tolist()[0]
+#     )
+# )
 
 location = pv_workflows.location.Location(
     latitude=pv_workflows.location.Latitude(value=45.677, units="deg"),
@@ -26,16 +37,16 @@ location_timestamps = pv_workflows.location.LocationTimestamps(
     location=location, timestamps=timestamps
 )
 
-print("")
+print()
 
 print("pvlib solar position calculated without weather:")
 print(
-    pv_workflows.location.pvlib_solar_position_from_location_timestamps(
+    pv_workflows_pvlib.location.solar_position_from_location_timestamps(
         location_timestamps=location_timestamps
     )
 )
 
-print("")
+print()
 
 weather_ghi = pv_workflows.weather.WeatherGhi(
     dew_point_temperatures=None,
@@ -63,7 +74,7 @@ location_timestamps_weather = pv_workflows.location.LocationTimestampsWeather(
 )
 
 solar_position_location_timestamps_weather = (
-    pv_workflows.location.pvlib_solar_position_from_location_timestamps_weather(
+    pv_workflows_pvlib.location.solar_position_from_location_timestamps_weather(
         location_timestamps_weather=location_timestamps_weather
     )
 )
@@ -76,59 +87,46 @@ print(solar_position_location_timestamps_weather)
 
 # print("pvlib DIRINT decomposition of GHI:")
 # print(
-#     pv_workflows.irradiance.pvlib_dirint_decomposition_from_solar_position_timestamps_weather(
+#     pv_workflows_pvlib.irradiance.pvlib_dirint_decomposition_from_solar_position_timestamps_weather(
 #         solar_position_timestamps_weather=solar_position_location_timestamps_weather
 #     )
 # )
 
-print("")
+print()
 
 print("pvlib DISC decomposition of GHI:")
 print(
-    pv_workflows.irradiance.pvlib_disc_decomposition_from_solar_position_timestamps_weather(
+    pv_workflows_pvlib.irradiance.disc_decomposition_from_solar_position_timestamps_weather(
         solar_position_timestamps_weather=solar_position_location_timestamps_weather
     )
 )
 
-print("")
+print()
 
 print("pvlib Erbs decomposition of GHI:")
 print(
-    pv_workflows.irradiance.pvlib_erbs_decomposition_from_solar_position_timestamps_weather(
+    pv_workflows_pvlib.irradiance.erbs_decomposition_from_solar_position_timestamps_weather(
         solar_position_timestamps_weather=solar_position_location_timestamps_weather
     )
 )
 
-print("")
+print()
 
-dhi_dni_ghi = pv_workflows.irradiance.pvlib_erbs_driesse_decomposition_from_solar_position_timestamps_weather(
+dhi_dni_ghi = pv_workflows_pvlib.irradiance.erbs_driesse_decomposition_from_solar_position_timestamps_weather(
     solar_position_timestamps_weather=solar_position_location_timestamps_weather
 )
 
 print("pvlib Erbs-Driesse decomposition of GHI:")
 print(
-    pv_workflows.irradiance.pvlib_erbs_driesse_decomposition_from_solar_position_timestamps_weather(
+    pv_workflows_pvlib.irradiance.erbs_driesse_decomposition_from_solar_position_timestamps_weather(
         solar_position_timestamps_weather=solar_position_location_timestamps_weather
     )
 )
 
-print("")
+print()
 
 weather_dhi_dni_ghi = pv_workflows.weather.WeatherDhiDniGhi(
     **asdict(weather_ghi), dhi=dhi_dni_ghi.dhi, dni=dhi_dni_ghi.dni
 )
 
 print(weather_dhi_dni_ghi)
-
-# print(
-#     type(
-#         pandas.date_range(
-#             start="2026-01-24 12:00:00",
-#             end="2026-01-24 12:00:00",
-#             freq="60min",
-#             tz="America/Denver",
-#         )
-#         .to_pydatetime()
-#         .tolist()[0]
-#     )
-# )

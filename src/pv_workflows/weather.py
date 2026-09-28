@@ -1,12 +1,12 @@
 """Weather workflows."""
 
+import typing
 from dataclasses import dataclass
 from functools import cached_property
-import typing
 
-from array_api.latest import Array
 import array_api_compat
 import scipy.constants
+from array_api.latest import Array
 
 from pv_workflows.common import ArrayWithUnits, Height
 
