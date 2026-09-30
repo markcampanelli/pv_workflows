@@ -1,7 +1,6 @@
 """Location (in space and time) workflows."""
 
 import typing
-import zoneinfo
 from dataclasses import dataclass
 
 from array_api.latest import Array
@@ -68,21 +67,6 @@ class Location:
     latitude: Latitude
     longitude: Longitude
     altitude: Altitude
-    tzinfo: zoneinfo.ZoneInfo
-
-
-@dataclass(frozen=True)
-class LocationTimestamps:
-    """Location on Earth specified with a timestamp sequence."""
-
-    location: Location
-    timestamps: Timestamps
-
-    def __post_init__(self) -> None:
-        """Validation."""
-
-        if self.location.tzinfo != self.timestamps.tzinfo:
-            raise ValueError("Timezone of timestamps does not match location.")
 
 
 @dataclass(frozen=True)
@@ -111,20 +95,6 @@ class SolarPosition:
     equation_of_times: EquationOfTimes
 
 
-@dataclass(frozen=True)
-class SolarPositionLocationTimestamps(LocationTimestamps):
-    """Position of Sun with location and time on Earth."""
-
-    solar_position: SolarPosition
-
-
-class SupportsSolarPositionFromLocationTimestamps(typing.Protocol):
-    def __call__(
-        self, *, location_timestamps: LocationTimestamps, **_
-    ) -> SolarPositionLocationTimestamps:
-        """Compute position of Sun from location and time on Earth."""
-
-
 class SolarPositionWeather(typing.Protocol):
     """Interface for weather needed for solar-position calculations."""
 
@@ -132,25 +102,15 @@ class SolarPositionWeather(typing.Protocol):
     pressures: Pressures
 
 
-@dataclass(frozen=True)
-class LocationTimestampsWeather(LocationTimestamps):
-    """Location on Earth specified with a timestamp sequence and weather."""
-
-    weather: SolarPositionWeather
-
-
-@dataclass(frozen=True)
-class SolarPositionLocationTimestampsWeather(LocationTimestampsWeather):
-    """Position of Sun with location, time, and weather on Earth."""
-
-    solar_position: SolarPosition
-
-
-class SupportsSolarPositionFromLocationTimestampsWeather(typing.Protocol):
+class SupportsSolarPosition(typing.Protocol):
     def __call__(
         self,
         *,
-        location_timestamps_weather: LocationTimestampsWeather,
+        timestamps: Timestamps,
+        location: Location,
+        weather: SolarPositionWeather | None,
         **_,
-    ) -> SolarPositionLocationTimestampsWeather:
-        """Compute position of Sun from location, time, and weather on Earth."""
+    ) -> SolarPosition:
+        """
+        Compute position of Sun from time, location, and (optionally) weather on Earth.
+        """

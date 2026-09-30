@@ -2,116 +2,67 @@
 
 import inspect
 
-import array_api_compat
 import numpy
 import pvlib
 
+from pv_workflows import XP
 from pv_workflows.common import Angles
 from pv_workflows.location import (
     EquationOfTimes,
-    LocationTimestamps,
-    LocationTimestampsWeather,
+    Location,
     SolarPosition,
-    SolarPositionLocationTimestamps,
-    SolarPositionLocationTimestampsWeather,
+    SolarPositionWeather,
+    Timestamps,
 )
 
 _PVLIB_GET_SOLAR_POSITION_SIG = inspect.signature(pvlib.solarposition.get_solarposition)
 
 
-def solar_position_from_location_timestamps(
+def solar_position(
     *,
-    location_timestamps: LocationTimestamps,
+    timestamps: Timestamps,
+    location: Location,
+    weather: SolarPositionWeather | None,
     method: str = _PVLIB_GET_SOLAR_POSITION_SIG.parameters["method"].default,
     **kwargs,
-) -> SolarPositionLocationTimestamps:
-    """
-    Compute position of Sun from location and time on Earth.
-
-    pv_workflows.location.SupportsSolarPositionFromLocationTimestamps
-    """
-
-    result = pvlib.solarposition.get_solarposition(
-        location_timestamps.timestamps.sequence,
-        location_timestamps.location.latitude.value,
-        location_timestamps.location.longitude.value,
-        location_timestamps.location.altitude.value,
-        _PVLIB_GET_SOLAR_POSITION_SIG.parameters["pressure"].default,
-        method,
-        _PVLIB_GET_SOLAR_POSITION_SIG.parameters["temperature"].default,
-        **kwargs,
-    )
-
-    # Note that Python Array API namespace cannot be inferred from arguments.
-    return SolarPositionLocationTimestamps(
-        solar_position=SolarPosition(
-            azimuths=Angles(array=result["azimuth"].to_numpy(), units="deg"),
-            zeniths=Angles(array=result["zenith"].to_numpy(), units="deg"),
-            apparent_zeniths=Angles(
-                array=result["apparent_zenith"].to_numpy(), units="deg"
-            ),
-            elevations=Angles(array=result["elevation"].to_numpy(), units="deg"),
-            apparent_elevations=Angles(
-                array=result["apparent_elevation"].to_numpy(), units="deg"
-            ),
-            equation_of_times=EquationOfTimes(
-                array=result["equation_of_time"].to_numpy(), units="min"
-            ),
-        ),
-        location=location_timestamps.location,
-        timestamps=location_timestamps.timestamps,
-    )
-
-
-def solar_position_from_location_timestamps_weather(
-    *,
-    location_timestamps_weather: LocationTimestampsWeather,
-    method: str = _PVLIB_GET_SOLAR_POSITION_SIG.parameters["method"].default,
-    **kwargs,
-) -> SolarPositionLocationTimestampsWeather:
+) -> SolarPosition:
     """
     Compute position of Sun from location, time, and weather on Earth.
 
-    pv_workflows.location.SupportsSolarPositionFromLocationTimestampsWeather
+    Implements pv_workflows.location.SupportsSolarPosition.
     """
 
+    if weather is None:
+        temperature = _PVLIB_GET_SOLAR_POSITION_SIG.parameters["temperature"].default
+        pressure = _PVLIB_GET_SOLAR_POSITION_SIG.parameters["pressure"].default
+    else:
+        temperature = numpy.asarray(weather.dry_bulb_temperatures.array)
+        pressure = numpy.asarray(weather.pressures.array)
+
     result = pvlib.solarposition.get_solarposition(
-        location_timestamps_weather.timestamps.sequence,
-        location_timestamps_weather.location.latitude.value,
-        location_timestamps_weather.location.longitude.value,
-        location_timestamps_weather.location.altitude.value,
-        pressure=numpy.asarray(location_timestamps_weather.weather.pressures.array),
+        timestamps.sequence,
+        location.latitude.value,
+        location.longitude.value,
+        location.altitude.value,
+        pressure=pressure,
         method=method,
-        temperature=numpy.asarray(
-            location_timestamps_weather.weather.dry_bulb_temperatures.array
-        ),
+        temperature=temperature,
         **kwargs,
     )
 
-    xp = array_api_compat.array_namespace(
-        location_timestamps_weather.weather.pressures.array
-    )
-
-    return SolarPositionLocationTimestampsWeather(
-        solar_position=SolarPosition(
-            azimuths=Angles(
-                array=xp.asarray(result["azimuth"].to_numpy()), units="deg"
-            ),
-            zeniths=Angles(array=xp.asarray(result["zenith"].to_numpy()), units="deg"),
-            apparent_zeniths=Angles(
-                array=xp.asarray(result["apparent_zenith"].to_numpy()), units="deg"
-            ),
-            elevations=Angles(
-                array=xp.asarray(result["elevation"].to_numpy()), units="deg"
-            ),
-            apparent_elevations=Angles(
-                array=xp.asarray(result["apparent_elevation"].to_numpy()), units="deg"
-            ),
-            equation_of_times=EquationOfTimes(
-                array=xp.asarray(result["equation_of_time"].to_numpy()), units="min"
-            ),
+    return SolarPosition(
+        azimuths=Angles(array=XP.asarray(result["azimuth"].to_numpy()), units="deg"),
+        zeniths=Angles(array=XP.asarray(result["zenith"].to_numpy()), units="deg"),
+        apparent_zeniths=Angles(
+            array=XP.asarray(result["apparent_zenith"].to_numpy()), units="deg"
         ),
-        location=location_timestamps_weather.location,
-        timestamps=location_timestamps_weather.timestamps,
-        weather=location_timestamps_weather.weather,
+        elevations=Angles(
+            array=XP.asarray(result["elevation"].to_numpy()), units="deg"
+        ),
+        apparent_elevations=Angles(
+            array=XP.asarray(result["apparent_elevation"].to_numpy()), units="deg"
+        ),
+        equation_of_times=EquationOfTimes(
+            array=XP.asarray(result["equation_of_time"].to_numpy()), units="min"
+        ),
     )

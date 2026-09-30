@@ -42,7 +42,9 @@ demo = [
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.4.0",
     "ruff >=0.16.9",
+    "scipy>=1.18.1",
 ]
 docs = [
     "sphinx >=9, <10",

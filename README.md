@@ -10,6 +10,10 @@ computational workflow that also accommodates plugging in component-model functi
 beyond those provided by `pvlib-python`. The approach here aims to be top down
 (workflows focused), rather than bottom up (algorithm focused).
 
+Currently, a secondary design goal is to readily accomodate parallized computations
+using an API such as Dask's `delayed` decorator, which creates a directed acyclic graph
+(DAG) for computational workflows.
+
 ### Design Principles
 
 To acheive the above goal, our approach uses the transformation of data as value
