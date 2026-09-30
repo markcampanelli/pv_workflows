@@ -11,8 +11,15 @@ import pv_workflows.weather
 import pv_workflows_pvlib.irradiance
 import pv_workflows_pvlib.location
 
-# print(
-#     type(
+timestamps = pv_workflows.common.Timestamps(
+    sequence=(
+        datetime.datetime(2026, 6, 22, 12, tzinfo=zoneinfo.ZoneInfo("America/Denver")),
+    )
+)
+
+# Alternative method to create compatible timestamps sequence using pandas.
+# timestamps = pv_workflows.common.Timestamps(
+#     sequence=tuple(
 #         pandas.date_range(
 #             start="2026-01-24 12:00:00",
 #             end="2026-01-24 12:00:00",
@@ -20,7 +27,7 @@ import pv_workflows_pvlib.location
 #             tz="America/Denver",
 #         )
 #         .to_pydatetime()
-#         .tolist()[0]
+#         .tolist()
 #     )
 # )
 
@@ -29,18 +36,13 @@ location = pv_workflows.location.Location(
     longitude=pv_workflows.location.Longitude(value=-111.043, units="deg"),
     altitude=pv_workflows.location.Altitude(value=4820, units="m"),
 )
-timestamps = pv_workflows.common.Timestamps(
-    sequence=(
-        datetime.datetime(2026, 6, 22, 12, tzinfo=zoneinfo.ZoneInfo("America/Denver")),
-    )
-)
 
 print()
 
 print("pvlib solar position calculated without weather:")
 print(
     pv_workflows_pvlib.location.solar_position(
-        location=location, timestamps=timestamps, weather=None
+        timestamps=timestamps, location=location, weather=None
     )
 )
 

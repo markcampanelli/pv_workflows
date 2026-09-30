@@ -4,10 +4,10 @@ import typing
 from dataclasses import dataclass
 from functools import cached_property
 
-import array_api_compat
 import scipy.constants
 from array_api.latest import Array
 
+from pv_workflows import XP
 from pv_workflows.common import ArrayWithUnits, Height
 
 
@@ -36,9 +36,7 @@ class Temperatures(ArrayWithUnits):
         if self.units not in ("K", "degC", "°C"):
             raise ValueError("Temperatures units must be K, degC, or °C.")
 
-        xp = array_api_compat.array_namespace(self.array)
-
-        if xp.any(self.array_K <= 0):
+        if XP.any(self.array_K <= 0):
             raise ValueError(
                 "Temperatures cannot be less than or equal to absolute zero."
             )
@@ -75,9 +73,7 @@ class WindSpeeds(ArrayWithUnits):
         if self.units not in ("m s-1",):
             raise ValueError("WindSpeeds units must be m s-1.")
 
-        xp = array_api_compat.array_namespace(self.array)
-
-        if xp.any(self.array < 0):
+        if XP.any(self.array < 0):
             raise ValueError("WindSpeeds must not be negative.")
 
 
@@ -105,9 +101,7 @@ class Irradiances(ArrayWithUnits):
         if self.units not in ("W m-2",):
             raise ValueError("Irradiances units must be W m-2.")
 
-        xp = array_api_compat.array_namespace(self.array)
-
-        if xp.any(self.array < 0):
+        if XP.any(self.array < 0):
             raise ValueError("Irradiances must not be negative.")
 
 
