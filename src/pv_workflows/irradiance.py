@@ -1,110 +1,69 @@
-"""
-Plane-of-array (POA) irradiance workflows.
-
-For front or backside of POA:
-  (1) Measured GHI -> Decomposed Components -> Transposed Components -> POA-Irradiance Components -> Effective POA Irradiance
-  (2) Measured GHI, DNI, DHI (at least 2 of 3) -> Transposed Components -> POA-Irradiance Components -> Effective POA Irradiance
-  (3) Measured POA Irradiance -> POA-Irradiance Components -> Effective POA Irradiance
-
-TODO: How to support including heterogeneous output that implementations may produce?
-"""
+"""Plane-of-array (POA) irradiance workflows."""
 
 import typing
-from dataclasses import dataclass
 
-from pv_workflows.common import Angles, Timestamps
-from pv_workflows.location import SolarPosition
-from pv_workflows.weather import DhiDniGhi, Irradiances, Pressures, Temperatures
+from pv_workflows.atmosphere import AirMass, Albedo, Irradiance
+from pv_workflows.common import Angle, Timestamp
 
 
-class SupportsExtraterrestrialRadiation(typing.Protocol):
-    """Interface for callables that compute extraterrestrial radiation."""
+class SupportsDecompositionResult(typing.TypedDict):
+    """Interface for result from callables that compute decompositions."""
 
+    ground_dhi: Irradiance
+    ground_dni: Irradiance
+
+
+class SupportsDecompositionZenith(typing.Protocol):
+    """
+    Interface for callables that compute decompositions using (true) zenith of the Sun.
+    """
+
+    # FIXME Input angle can be validated for proper ranges.
     def __call__(
         self,
         *,
-        timestamps: Timestamps,
-    ) -> Irradiances:
-        """Compute extraterrestrial DNI from FIXME."""
+        timestamps: Timestamp,
+        ground_ghi: Irradiance,
+        sun_zenith: Angle,
+        **_: typing.Any,
+    ) -> SupportsDecompositionResult:
+        """
+        Compute decomposition of GHI into DHI and DNI using (true) zenith of the Sun.
+        """
 
 
-class DecompositionWeather(typing.Protocol):
-    """Weather info needed for GHI-decomposition calculations."""
+class SupportsPoaComponentsResult(typing.TypedDict):
+    """
+    Interface for result of computing POA-irradance components from transposition of DHI
+    and DNI and ground diffuse from GHI and albedo.
+    """
 
-    ghi: Irradiances
-    dew_point_temperatures: Temperatures | None = None
-    pressures: Pressures | None = None
+    poa_direct: Irradiance
+    poa_circumsolar: Irradiance
+    poa_isotropic: Irradiance
+    poa_horizon: Irradiance
+    poa_ground: Irradiance
 
 
-class DecompositionSolarPosition(typing.Protocol):
-    """Solar position info needed for GHI-decomposition calculations."""
+class SupportsPoaComponents(typing.Protocol):
+    """Interface for callables that compute POA-irradiance components."""
 
-    zenith: Angles
-
-
-class SupportsDecomposition(typing.Protocol):
-    """Interface for callables that compute decompositions."""
-
+    # FIXME Input angles can be validated for proper ranges.
+    # FIXME Algorithms may return negative DHI, which is currently invalid irradiance.
+    # FIMXE How does this generalize for back-side irradiance?
     def __call__(
         self,
         *,
-        timestamps: Timestamps,
-        weather: DecompositionWeather,
-        solar_position: DecompositionSolarPosition,
-    ) -> DhiDniGhi:
-        """Compute decomposition of GHI into DHI and DNI."""
-
-
-@dataclass(frozen=True)
-class OrientationsPOA:
-    """POA irradiances with units."""
-
-    surface_tilt: Angles
-    surface_azimuth: Angles
-
-    # FIXME Validate broadcastability?
-
-
-@dataclass(frozen=True)
-class IrradiancesDiffuse:
-    """POA diffues irradiances with units."""
-
-    circumsolar: Irradiances
-    isotropic: Irradiances
-    horizon: Irradiances
-    ground: Irradiances
-
-    # FIXME Validate broadcastability?
-
-
-@dataclass(frozen=True)
-class IrradiancesPOA:
-    """POA irradiances with units."""
-
-    orientation: OrientationsPOA
-    direct: Irradiances
-    diffuse: IrradiancesDiffuse
-
-    # FIXME Validate broadcastability?
-
-
-class SupportsTransposition(typing.Protocol):
-    """Interface for callables that compute transpositions."""
-
-    def __call__(
-        self,
-        *,
-        timestamps: Timestamps,
-        solar_position: SolarPosition,
-        dhi_dni_ghi: DhiDniGhi,
-        **kwargs,
-    ) -> IrradiancesPOA:
-        """Compute transposition of two of three of GHI, DHI, and DNI into POA."""
-
-
-# import pvlib
-# pvlib.irradiance.perez(
-#     surface_tilt, surface_azimuth, dhi, dni, dni_extra,
-#     solar_zenith, solar_azimuth, airmass,
-#     model='allsitescomposite1990', return_components=False,
-# )
+        poa_tilt: Angle,
+        poa_azimuth: Angle,
+        sun_zenith_apparent: Angle,
+        sun_azimuth: Angle,
+        ground_dhi: Irradiance,
+        ground_dni: Irradiance,
+        extraterrestrial_dni: Irradiance,
+        air_mass_relative: AirMass,
+        ground_ghi: Irradiance,
+        ground_albedo: Albedo,
+        **_: typing.Any,
+    ) -> SupportsPoaComponentsResult:
+        """Compute POA-irradance components."""

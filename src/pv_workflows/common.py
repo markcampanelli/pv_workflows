@@ -28,7 +28,7 @@ class ArrayWithUnits:
 
 
 @dataclass(frozen=True)
-class Timestamps:
+class Timestamp:
     """Timestamps with timezone."""
 
     sequence: Sequence[datetime.datetime]
@@ -37,7 +37,7 @@ class Timestamps:
         """Validation."""
 
         if len(self.sequence) == 0:
-            raise ValueError("Timestamps sequence is empty.")
+            raise ValueError("Timestamp sequence is empty.")
 
         tzinfos = {timestamp.tzinfo for timestamp in self.sequence}
 
@@ -55,7 +55,7 @@ class Timestamps:
 
 
 @dataclass(frozen=True)
-class Angles(ArrayWithUnits):
+class Angle(ArrayWithUnits):
     """Angles with units."""
 
     units: typing.Literal["rad", "deg", "°"]
@@ -64,7 +64,7 @@ class Angles(ArrayWithUnits):
         """Validation."""
 
         if self.units not in ("rad", "deg", "°"):
-            raise ValueError("angle units must be rad, deg, or °.")
+            raise ValueError("Angle units must be rad, deg, or °.")
 
     @cached_property
     def array_deg(self) -> Array:

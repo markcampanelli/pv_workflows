@@ -1,21 +1,16 @@
+"""Getting started with a basic mono-facial PV energy simulation."""
+
 import datetime
 import zoneinfo
-from dataclasses import asdict
 
 import numpy
-import pvlib
 
+import pv_workflows.atmosphere
 import pv_workflows.common
 import pv_workflows.location
-import pv_workflows.weather
+import pv_workflows_pvlib.atmosphere
 import pv_workflows_pvlib.irradiance
 import pv_workflows_pvlib.location
-
-timestamps = pv_workflows.common.Timestamps(
-    sequence=(
-        datetime.datetime(2026, 6, 22, 12, tzinfo=zoneinfo.ZoneInfo("America/Denver")),
-    )
-)
 
 # Alternative method to create compatible timestamps sequence using pandas.
 # timestamps = pv_workflows.common.Timestamps(
@@ -31,94 +26,87 @@ timestamps = pv_workflows.common.Timestamps(
 #     )
 # )
 
-location = pv_workflows.location.Location(
-    latitude=pv_workflows.location.Latitude(value=45.677, units="deg"),
-    longitude=pv_workflows.location.Longitude(value=-111.043, units="deg"),
-    altitude=pv_workflows.location.Altitude(value=4820, units="m"),
-)
-
-print()
-
-print("pvlib solar position calculated without weather:")
-print(
-    pv_workflows_pvlib.location.solar_position(
-        timestamps=timestamps, location=location, weather=None
+# Energy-simulation configuration.
+timestamps = pv_workflows.common.Timestamp(
+    sequence=(
+        datetime.datetime(2026, 6, 22, 12, tzinfo=zoneinfo.ZoneInfo("America/Denver")),
     )
 )
+latitude = pv_workflows.location.Latitude(value=45.677, units="deg")
+longitude = pv_workflows.location.Longitude(value=-111.043, units="deg")
+altitude = pv_workflows.location.Altitude(value=4820, units="m")
+
+poa_tilt = pv_workflows.common.Angle(array=45.0, units="deg")
+poa_azimuth = pv_workflows.common.Angle(array=180.0, units="deg")
+
+dry_bulb_temperature = pv_workflows.atmosphere.Temperature(
+    array=numpy.array(25.0), units="degC"
+)
+wind_speed = pv_workflows.atmosphere.WindSpeed(
+    array=numpy.array(1.0),
+    units="m s-1",
+    height=pv_workflows.common.Height(value=10, units="m"),
+)
+
+ground_ghi = pv_workflows.atmosphere.Irradiance(
+    array=numpy.array(1000.0), units="W m-2"
+)
+ground_albedo = pv_workflows.atmosphere.Albedo(array=numpy.array(0.124), units="")
 
 print()
 
-weather_ghi = pv_workflows.weather.WeatherGhi(
-    dew_point_temperatures=None,
-    dry_bulb_temperatures=pv_workflows.weather.Temperatures(
-        array=numpy.array(25.0), units="degC"
-    ),
-    ghi=pv_workflows.weather.Irradiances(
-        array=numpy.array(1000.0),
-        units="W m-2",
-    ),
-    pressures=pv_workflows.weather.Pressures(
-        array=numpy.asarray(pvlib.atmosphere.alt2pres(location.altitude.value)),
-        units="Pa",
-    ),
-    wind_speeds=pv_workflows.weather.WindSpeeds(
-        array=numpy.array(1.0),
-        units="m s-1",
-        height=pv_workflows.common.Height(value=10, units="m"),
-    ),
+sun_position = pv_workflows_pvlib.location.sun_position_nrel_numpy(
+    timestamp=timestamps,
+    latitude=latitude,
+    longitude=longitude,
+    altitude=altitude,
+    dry_bulb_temperature=dry_bulb_temperature,
 )
 
-# weather_ghi implements SolarPositionWeather.
-solar_position = pv_workflows_pvlib.location.solar_position(
-    timestamps=timestamps, location=location, weather=weather_ghi
-)
-
-print("pvlib solar position calculated with weather:")
-print(solar_position)
-
-# DIRINT is a WIP: Requires at least two timesteps.
-# print("")
-
-# print("pvlib DIRINT decomposition of GHI:")
-# print(
-#     pv_workflows_pvlib.irradiance.pvlib_dirint_decomposition_from_solar_position_timestamps_weather(
-#         solar_position_timestamps_weather=solar_position_location_timestamps_weather
-#     )
-# )
+print(f"Sun position calculated with temperature via pvlib:\n{sun_position}")
 
 print()
 
-print("pvlib DISC decomposition of GHI:")
-print(
-    pv_workflows_pvlib.irradiance.disc_decomposition(
-        timestamps=timestamps, weather=weather_ghi, solar_position=solar_position
-    )
+decomposition = pv_workflows_pvlib.irradiance.erbs_driesse_decomposition(
+    timestamps=timestamps,
+    ground_ghi=ground_ghi,
+    **sun_position,  # Contains sun_zenith. Extra aguments ignored.
 )
+
+print(f"Erbs-Driesse decomposition of GHI via pvlib:\n{decomposition}")
 
 print()
 
-print("pvlib Erbs decomposition of GHI:")
-print(
-    pv_workflows_pvlib.irradiance.erbs_decomposition(
-        timestamps=timestamps, weather=weather_ghi, solar_position=solar_position
-    )
+# FIXME Compute dni_extraterrestrial and use above in erbs_driesse_decomposition.
+extraterrestrial_dni = pv_workflows.atmosphere.Irradiance(
+    array=numpy.array(1366.1), units="W m-2"
 )
 
-print()
-
-dhi_dni_ghi = pv_workflows_pvlib.irradiance.erbs_driesse_decomposition(
-    timestamps=timestamps, weather=weather_ghi, solar_position=solar_position
+# TODO It's unclear if using sun position at sea level is technically correct here.
+sun_position_sea_level = pv_workflows_pvlib.location.sun_position_nrel_numpy(
+    timestamp=timestamps,
+    latitude=latitude,
+    longitude=longitude,
+    altitude=pv_workflows.location.Altitude(value=0, units="m"),
+    dry_bulb_temperature=dry_bulb_temperature,
 )
 
-print("pvlib Erbs-Driesse decomposition of GHI:")
-print(dhi_dni_ghi)
-
-print()
-
-weather_dhi_dni_ghi = pv_workflows.weather.WeatherDhiDniGhi(
-    **asdict(weather_ghi), dhi=dhi_dni_ghi.dhi, dni=dhi_dni_ghi.dni
+# Compute relative air mass at sea level.
+air_mass_relative = pv_workflows_pvlib.atmosphere.air_mass_relative_kastenyoung1989(
+    **sun_position_sea_level,  # Contains sun_apparent_zenith.
 )
 
-print(weather_dhi_dni_ghi)
+poa_components = pv_workflows_pvlib.irradiance.perez_driesse_poa_components(
+    poa_tilt=poa_tilt,
+    poa_azimuth=poa_azimuth,
+    **sun_position_sea_level,  # Contains sun_zenith_apparent and sun_azimuth.
+    **decomposition,  # Contains ground_dhi and ground_dni.
+    ground_ghi=ground_ghi,
+    extraterrestrial_dni=extraterrestrial_dni,
+    ground_albedo=ground_albedo,
+    air_mass_relative=air_mass_relative,
+)
+
+print(f"Perez-Driesse POA components via pvlib:\n{poa_components}")
 
 print()
