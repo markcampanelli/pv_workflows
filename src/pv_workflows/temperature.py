@@ -40,7 +40,7 @@ class Uv(ValueWithUnits):
             raise ValueError("Uv is negative.")
 
 
-class SupportsComputeCellTemperatureFromHeatBalance(typing.Protocol):
+class SupportsComputeCellTemperatureHeatBalance(typing.Protocol):
     """
     Interface for callables that compute cell temperature using heat balance equation.
     """
@@ -58,7 +58,7 @@ class SupportsComputeCellTemperatureFromHeatBalance(typing.Protocol):
         """Compute cell temperature using heat balance equation."""
 
 
-def cell_heat_balance(
+def compute_cell_temperature_heat_balance(
     *,
     dry_bulb_temperature: Temperatures,
     poa_irradiance: Irradiances,
@@ -74,7 +74,7 @@ def cell_heat_balance(
     PVsyst's absorption-coefficient parameter (e.g., 0.9) and device-efficiency
     parameter (e.g., 0.15) have been absorbed into the Uc and Uv coefficents.
 
-    Implements pc_workflows.temperature.SupportsComputeCellTemperatureFromHeatBalance.
+    Implements pc_workflows.temperature.SupportsComputeCellTemperatureHeatBalance.
     """
 
     return Temperatures(

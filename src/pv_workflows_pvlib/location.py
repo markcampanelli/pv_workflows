@@ -18,7 +18,7 @@ from pv_workflows.location import (
 _GET_SOLAR_POSITION_SIG = inspect.signature(pvlib.solarposition.get_solarposition)
 
 
-def sun_position_nrel_numpy(
+def compute_sun_position_nrel_numpy(
     *,
     timestamp: Timestamps,
     latitude: Latitude,
@@ -30,7 +30,7 @@ def sun_position_nrel_numpy(
     """
     Compute position of Sun from location, time, and weather on Earth.
 
-    Implements pv_workflows.location.SupportsSunPosition.
+    Implements pv_workflows.location.SupportsComputeSunPosition.
     """
 
     pressure = _GET_SOLAR_POSITION_SIG.parameters["pressure"].default

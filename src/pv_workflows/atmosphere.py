@@ -123,23 +123,21 @@ class RelativeAirMasses(ArrayUnitless):
 # FIXME Need to adopt a convention for air mass when zenith is greater than 90 degrees.
 
 
-class SupportsRelativeAirMassZenith(typing.Protocol):
+class SupportsComputeRelativeAirMassFromSunZenith(typing.Protocol):
     """
-    Interface for callables that compute relative air mass at sea level from (true)
-    zenith of Sum.
+    Interface for callables that compute relative air mass from (true) zenith of Sum.
     """
 
     def __call__(self, *, sun_zenith: Angles, **_: typing.Any) -> RelativeAirMasses:
-        """Compute relative air mass at sea level from (true) zenith of Sun."""
+        """Compute relative air mass (at sea level) from (true) zenith of Sun."""
 
 
-class SupportsRelativeAirMassZenithApparent(typing.Protocol):
+class SupportsComputeRelativeAirMassFromSunZenithApparent(typing.Protocol):
     """
-    Interface for callables that compute relative air mass at sea level from apparent
-    zenith of Sun.
+    Interface for callables that compute relative air mass from apparent zenith of Sun.
     """
 
     def __call__(
         self, *, sun_zenith_apparent: Angles, **_: typing.Any
     ) -> RelativeAirMasses:
-        """Compute relative air mass at sea level from apparent zenith of Sun."""
+        """Compute relative air mass (at sea level) from apparent zenith of Sun."""

@@ -27,7 +27,7 @@ import pv_workflows_pvlib.location
 #     )
 # )
 
-# Energy-simulation configuration.
+# Energy-simulation configuration, with related elements collected into dictionaries.
 timestamp = pv_workflows.common.Timestamps(
     sequence=(
         datetime.datetime(2026, 6, 22, 12, tzinfo=zoneinfo.ZoneInfo("America/Denver")),
@@ -67,7 +67,7 @@ heat_balance_coefficients = {
 
 print()
 
-sun_position = pv_workflows_pvlib.location.sun_position_nrel_numpy(
+sun_position = pv_workflows_pvlib.location.compute_sun_position_nrel_numpy(
     timestamp=timestamp,
     **location,  # Contains only latitude, longitude, and altitude.
     dry_bulb_temperature=weather["dry_bulb_temperature"],
@@ -94,7 +94,7 @@ extraterrestrial_dni = (
 )
 
 # TODO It's unclear if using sun position at sea level is technically correct here.
-sun_position_sea_level = pv_workflows_pvlib.location.sun_position_nrel_numpy(
+sun_position_sea_level = pv_workflows_pvlib.location.compute_sun_position_nrel_numpy(
     timestamp=timestamp,
     latitude=location["latitude"],
     longitude=location["longitude"],
@@ -103,8 +103,10 @@ sun_position_sea_level = pv_workflows_pvlib.location.sun_position_nrel_numpy(
 )
 
 # Compute relative air mass (at sea level).
-relative_air_mass = pv_workflows_pvlib.atmosphere.relative_air_mass_kastenyoung1989(
-    sun_zenith_apparent=sun_position_sea_level.zenith_apparent,
+relative_air_mass = (
+    pv_workflows_pvlib.atmosphere.compute_relative_air_mass_kastenyoung1989(
+        sun_zenith_apparent=sun_position_sea_level.zenith_apparent,
+    )
 )
 
 poa_irradiance_components = (
@@ -125,7 +127,7 @@ print(f"Perez-Driesse POA components via pvlib:\n{poa_irradiance_components}")
 
 print()
 
-cell_temperature = pv_workflows.temperature.cell_heat_balance(
+cell_temperature = pv_workflows.temperature.compute_cell_temperature_heat_balance(
     dry_bulb_temperature=weather["dry_bulb_temperature"],
     wind_speed=weather["wind_speed"],
     poa_irradiance=poa_irradiance_components.total,

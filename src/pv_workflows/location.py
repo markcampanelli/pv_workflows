@@ -68,7 +68,7 @@ class SunPosition:
     elevation_apparent: Angles
 
 
-class SupportsSunPosition(typing.Protocol):
+class SupportsComputeSunPosition(typing.Protocol):
     def __call__(
         self,
         *,
