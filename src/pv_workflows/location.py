@@ -57,14 +57,15 @@ class Altitude(ValueWithUnits):
             raise ValueError("altitude units must be m.")
 
 
-class SupportsSunPositionResult(typing.TypedDict):
+@dataclass(frozen=True)
+class SunPosition:
     """Position of Sun from time and location on Earth."""
 
-    sun_azimuth: Angles
-    sun_zenith: Angles
-    sun_zenith_apparent: Angles
-    sun_elevation: Angles
-    sun_elevation_apparent: Angles
+    azimuth: Angles
+    zenith: Angles
+    zenith_apparent: Angles
+    elevation: Angles
+    elevation_apparent: Angles
 
 
 class SupportsSunPosition(typing.Protocol):
@@ -76,5 +77,5 @@ class SupportsSunPosition(typing.Protocol):
         longitude: Longitude,
         altitude: Altitude,
         **_: typing.Any,
-    ) -> SupportsSunPositionResult:
+    ) -> SunPosition:
         """Compute position of Sun from time and location on Earth."""

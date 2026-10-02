@@ -40,23 +40,10 @@ class Uv(ValueWithUnits):
             raise ValueError("Uv is negative.")
 
 
-@dataclass(frozen=True, init=False)
-class CellTemperature:
-    """Cell temperature with dynamic metadata fields."""
-
-    cell_temperature: Temperatures
-
-    def __init__(self, *, cell_temperature: Temperatures, **kwargs) -> None:
-        """Assign defined and dynamic fields for frozen extensible dataclass."""
-
-        object.__setattr__(self, "cell_temperature", cell_temperature)
-
-        for key, value in kwargs.items():
-            object.__setattr__(self, key, value)
-
-
-class SupportsCellTemperatureHeatBalance(typing.Protocol):
-    """Interface for callables that compute cell temperature using heat balance."""
+class SupportsComputeCellTemperatureFromHeatBalance(typing.Protocol):
+    """
+    Interface for callables that compute cell temperature using heat balance equation.
+    """
 
     def __call__(
         self,
@@ -67,8 +54,8 @@ class SupportsCellTemperatureHeatBalance(typing.Protocol):
         thermal_conduction_coefficient: Uc,
         thermal_convection_coefficient: Uv,
         **_: typing.Any,
-    ) -> CellTemperature:
-        """Compute cell temperature using heat balance."""
+    ) -> Temperatures:
+        """Compute cell temperature using heat balance equation."""
 
 
 def cell_heat_balance(
@@ -79,25 +66,23 @@ def cell_heat_balance(
     thermal_conduction_coefficient: Uc,
     thermal_convection_coefficient: Uv,
     **_: typing.Any,
-) -> CellTemperature:
+) -> Temperatures:
     """
-    Compute cell temperature using heat balance.
+    Compute cell temperature using heat balance equation.
 
     A streamlined version of the PVsyst heat-balance model, where the factors involving
     PVsyst's absorption-coefficient parameter (e.g., 0.9) and device-efficiency
     parameter (e.g., 0.15) have been absorbed into the Uc and Uv coefficents.
 
-    Implements pc_workflows.temperature.SupportsCellTemperatureHeatBalance.
+    Implements pc_workflows.temperature.SupportsComputeCellTemperatureFromHeatBalance.
     """
 
-    return CellTemperature(
-        cell_temperature=Temperatures(
-            array=dry_bulb_temperature.array
-            + poa_irradiance.array
-            / (
-                thermal_conduction_coefficient.value
-                + thermal_convection_coefficient.value * wind_speed.array
-            ),
-            units="degC",
-        )
+    return Temperatures(
+        array=dry_bulb_temperature.array
+        + poa_irradiance.array
+        / (
+            thermal_conduction_coefficient.value
+            + thermal_convection_coefficient.value * wind_speed.array
+        ),
+        units="degC",
     )

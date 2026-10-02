@@ -8,24 +8,20 @@ import pandas
 import pvlib
 
 from pv_workflows import XP
-from pv_workflows.atmosphere import AirMasses, Albedos, Irradiance, Irradiances
-from pv_workflows.common import Angle, AngleCosine, Angles, ArrayWithUnits, Timestamps
-from pv_workflows.irradiance import (
-    SupportsDecompositionResult,
-    SupportsExtraterrestrialDniResult,
-    SupportsPoaIrradianceComponentsResult,
-)
+from pv_workflows.atmosphere import Albedos, Irradiance, Irradiances, RelativeAirMasses
+from pv_workflows.common import Angle, AngleCosine, Angles, Timestamps
+from pv_workflows.irradiance import GhiDecomposition, PoaIrradianceComponents
 
 _GET_EXTRA_RADIATION_SIG = inspect.signature(pvlib.irradiance.get_extra_radiation)
 
 
-def extraterrestrial_dni_spencer(
+def compute_extraterrestrial_dni_spencer(
     *, timestamp: Timestamps, solar_constant: Irradiance | None, **_: typing.Any
-) -> SupportsExtraterrestrialDniResult:
+) -> Irradiances:
     """
     Compute extraterrestrial DNI from time and (optional) solar constant.
 
-    Implements pv_workflows.irradiance.SupportsExtraterrestrialDni.
+    Implements pv_workflows.irradiance.SupportsComputeExtraterrestrialDni.
     """
 
     if solar_constant is None:
@@ -37,11 +33,7 @@ def extraterrestrial_dni_spencer(
         pandas.to_datetime(timestamp.sequence), solar_constant, "spencer"
     )
 
-    return SupportsExtraterrestrialDniResult(
-        extraterrestrial_dni=Irradiances(
-            array=XP.asarray(result.to_numpy()), units="W m-2"
-        )
-    )
+    return Irradiances(array=XP.asarray(result.to_numpy()), units="W m-2")
 
 
 # _DIRINT_SIG = inspect.signature(pvlib.irradiance.dirint)
@@ -146,19 +138,19 @@ def extraterrestrial_dni_spencer(
 _ERBS_SIG = inspect.signature(pvlib.irradiance.erbs)
 
 
-def erbs_decomposition(
+def decompose_ghi_erbs(
     *,
     timestamp: Timestamps,
-    ground_ghi: Irradiances,
+    ghi: Irradiances,
     sun_zenith: Angles,
     min_cos_zenith: AngleCosine | None = None,
     max_zenith: Angle | None = None,
     **_: typing.Any,
-) -> SupportsDecompositionResult:
+) -> GhiDecomposition:
     """
     Compute decomposition of GHI into DHI and DNI using pvlib's Erbs model.
 
-    Implements pv_workflows.irradiance.SupportsDecompositionZenith.
+    Implements pv_workflows.irradiance.SupportsDecomposeGhiFromSunZenith.
     """
 
     if min_cos_zenith is None:
@@ -172,41 +164,36 @@ def erbs_decomposition(
         max_zenith = max_zenith.to_deg.value
 
     result = pvlib.irradiance.erbs(
-        numpy.asarray(ground_ghi.array),
+        numpy.asarray(ghi.array),
         numpy.asarray(sun_zenith.to_deg.array),
         pandas.to_datetime(timestamp.sequence),
         min_cos_zenith,
         max_zenith,
     )
 
-    return SupportsDecompositionResult(
-        ground_dhi=Irradiances(
-            array=XP.asarray(result["dhi"].to_numpy()), units="W m-2"
-        ),
-        ground_dni=Irradiances(
-            array=XP.asarray(result["dni"].to_numpy()), units="W m-2"
-        ),
-        kt=ArrayWithUnits(array=XP.asarray(result["kt"].to_numpy()), units=""),
+    return GhiDecomposition(
+        dhi=Irradiances(array=XP.asarray(result["dhi"].to_numpy()), units="W m-2"),
+        dni=Irradiances(array=XP.asarray(result["dni"].to_numpy()), units="W m-2"),
     )
 
 
 _ERBS_DRIESSE_SIG = inspect.signature(pvlib.irradiance.erbs_driesse)
 
 
-def erbs_driesse_decomposition(
+def decompose_ghi_erbs_driesse(
     *,
     timestamp: Timestamps,
-    ground_ghi: Irradiances,
+    ghi: Irradiances,
     sun_zenith: Angles,
     extraterrestrial_dni: Irradiances | None = None,
     min_cos_zenith: AngleCosine | None = None,
     max_zenith: Angle | None = None,
     **_: typing.Any,
-) -> SupportsDecompositionResult:
+) -> GhiDecomposition:
     """
     Compute decomposition of GHI into DHI and DNI using pvlib's Erbs-Driesse model.
 
-    Implements pv_workflows.irradiance.SupportsDecompositionZenith.
+    Implements pv_workflows.irradiance.SupportsDecomposeGhiFromSunZenith.
     """
 
     if extraterrestrial_dni is None:
@@ -227,7 +214,7 @@ def erbs_driesse_decomposition(
         max_zenith = max_zenith.to_deg.value
 
     result = pvlib.irradiance.erbs_driesse(
-        numpy.asarray(ground_ghi.array),
+        numpy.asarray(ghi.array),
         numpy.asarray(sun_zenith.to_deg.array),
         datetime_or_doy,
         dni_extra,
@@ -235,39 +222,34 @@ def erbs_driesse_decomposition(
         max_zenith,
     )
 
-    return SupportsDecompositionResult(
-        ground_dhi=Irradiances(
-            array=XP.asarray(result["dhi"].to_numpy()), units="W m-2"
-        ),
-        ground_dni=Irradiances(
-            array=XP.asarray(result["dni"].to_numpy()), units="W m-2"
-        ),
-        kt=ArrayWithUnits(array=XP.asarray(result["kt"].to_numpy()), units=""),
+    return GhiDecomposition(
+        dhi=Irradiances(array=XP.asarray(result["dhi"].to_numpy()), units="W m-2"),
+        dni=Irradiances(array=XP.asarray(result["dni"].to_numpy()), units="W m-2"),
     )
 
 
-def perez_poa_irradiance_components_allsitescomposite1990(
+def compute_poa_irradiance_components_perez_allsitescomposite1990(
     *,
     poa_tilt: Angles,
     poa_azimuth: Angles,
     sun_zenith_apparent: Angles,
     sun_azimuth: Angles,
-    ground_dhi: Irradiances,
-    ground_dni: Irradiances,
+    dhi: Irradiances,
+    dni: Irradiances,
     extraterrestrial_dni: Irradiances,
-    relative_air_mass: AirMasses,
-    ground_ghi: Irradiances,
-    ground_albedo: Albedos,
+    relative_air_mass: RelativeAirMasses,
+    ghi: Irradiances,
+    albedo: Albedos,
     **_: typing.Any,
-) -> SupportsPoaIrradianceComponentsResult:
+) -> PoaIrradianceComponents:
     """
     Compute POA-irradance components using pvlib.irradiance's aoi_projection,
     perez allsitescomposite1990, and get_ground_diffuse models.
 
-    Implements pv_workflows.irradiance.SupportsPoaIrradianceComponents.
+    Implements pv_workflows.irradiance.SupportsComputePoaIrradianceComponents.
     """
 
-    poa_direct = ground_dni.array * pvlib.irradiance.aoi_projection(
+    poa_direct = dni.array * pvlib.irradiance.aoi_projection(
         numpy.asarray(poa_tilt.to_deg.array),
         numpy.asarray(poa_azimuth.to_deg.array),
         numpy.asarray(sun_zenith_apparent.to_deg.array),
@@ -277,8 +259,8 @@ def perez_poa_irradiance_components_allsitescomposite1990(
     result = pvlib.irradiance.perez(
         numpy.asarray(poa_tilt.to_deg.array),
         numpy.asarray(poa_azimuth.to_deg.array),
-        numpy.asarray(ground_dhi.array),
-        numpy.asarray(ground_dni.array),
+        numpy.asarray(dhi.array),
+        numpy.asarray(dni.array),
         numpy.asarray(extraterrestrial_dni.array),
         numpy.asarray(sun_zenith_apparent.to_deg.array),
         numpy.asarray(sun_azimuth.to_deg.array),
@@ -289,46 +271,44 @@ def perez_poa_irradiance_components_allsitescomposite1990(
 
     poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(
         numpy.asarray(poa_tilt.to_deg.array),
-        numpy.asarray(ground_ghi.array),
-        numpy.asarray(ground_albedo.array),
+        numpy.asarray(ghi.array),
+        numpy.asarray(albedo.array),
     )
 
     units = "W m-2"
-    return SupportsPoaIrradianceComponentsResult(
-        poa_direct=Irradiances(array=poa_direct, units=units),
-        poa_circumsolar=Irradiances(
+    return PoaIrradianceComponents(
+        direct=Irradiances(array=poa_direct, units=units),
+        circumsolar=Irradiances(
             array=XP.asarray(result["poa_circumsolar"]), units=units
         ),
-        poa_isotropic=Irradiances(
-            array=XP.asarray(result["poa_isotropic"]), units=units
-        ),
-        poa_horizon=Irradiances(array=XP.asarray(result["poa_horizon"]), units=units),
-        poa_ground=Irradiances(array=XP.asarray(poa_ground_diffuse), units=units),
+        isotropic=Irradiances(array=XP.asarray(result["poa_isotropic"]), units=units),
+        horizon=Irradiances(array=XP.asarray(result["poa_horizon"]), units=units),
+        ground=Irradiances(array=XP.asarray(poa_ground_diffuse), units=units),
     )
 
 
-def perez_driesse_poa_irradiance_components(
+def compute_poa_irradiance_components_perez_driesse(
     *,
     poa_tilt: Angles,
     poa_azimuth: Angles,
     sun_zenith_apparent: Angles,
     sun_azimuth: Angles,
-    ground_dhi: Irradiances,
-    ground_dni: Irradiances,
+    dhi: Irradiances,
+    dni: Irradiances,
     extraterrestrial_dni: Irradiances,
-    relative_air_mass: AirMasses,
-    ground_ghi: Irradiances,
-    ground_albedo: Albedos,
+    relative_air_mass: RelativeAirMasses,
+    ghi: Irradiances,
+    albedo: Albedos,
     **_: typing.Any,
-) -> SupportsPoaIrradianceComponentsResult:
+) -> PoaIrradianceComponents:
     """
     Compute POA-irradance components using pvlib.irradiance's aoi_projection,
     perez-driesse, and get_ground_diffuse models.
 
-    Implements pv_workflows.irradiance.SupportsPoaIrradianceComponents.
+    Implements pv_workflows.irradiance.SupportsComputePoaIrradianceComponents.
     """
 
-    poa_direct = ground_dni.array * pvlib.irradiance.aoi_projection(
+    poa_direct = dni.array * pvlib.irradiance.aoi_projection(
         numpy.asarray(poa_tilt.to_deg.array),
         numpy.asarray(poa_azimuth.to_deg.array),
         numpy.asarray(sun_zenith_apparent.to_deg.array),
@@ -338,8 +318,8 @@ def perez_driesse_poa_irradiance_components(
     result = pvlib.irradiance.perez_driesse(
         numpy.asarray(poa_tilt.to_deg.array),
         numpy.asarray(poa_azimuth.to_deg.array),
-        numpy.asarray(ground_dhi.array),
-        numpy.asarray(ground_dni.array),
+        numpy.asarray(dhi.array),
+        numpy.asarray(dni.array),
         numpy.asarray(extraterrestrial_dni.array),
         numpy.asarray(sun_zenith_apparent.to_deg.array),
         numpy.asarray(sun_azimuth.to_deg.array),
@@ -349,19 +329,17 @@ def perez_driesse_poa_irradiance_components(
 
     poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(
         numpy.asarray(poa_tilt.to_deg.array),
-        numpy.asarray(ground_ghi.array),
-        numpy.asarray(ground_albedo.array),
+        numpy.asarray(ghi.array),
+        numpy.asarray(albedo.array),
     )
 
     units = "W m-2"
-    return SupportsPoaIrradianceComponentsResult(
-        poa_direct=Irradiances(array=poa_direct, units=units),
-        poa_circumsolar=Irradiances(
+    return PoaIrradianceComponents(
+        direct=Irradiances(array=poa_direct, units=units),
+        circumsolar=Irradiances(
             array=XP.asarray(result["poa_circumsolar"]), units=units
         ),
-        poa_isotropic=Irradiances(
-            array=XP.asarray(result["poa_isotropic"]), units=units
-        ),
-        poa_horizon=Irradiances(array=XP.asarray(result["poa_horizon"]), units=units),
-        poa_ground=Irradiances(array=XP.asarray(poa_ground_diffuse), units=units),
+        isotropic=Irradiances(array=XP.asarray(result["poa_isotropic"]), units=units),
+        horizon=Irradiances(array=XP.asarray(result["poa_horizon"]), units=units),
+        ground=Irradiances(array=XP.asarray(poa_ground_diffuse), units=units),
     )

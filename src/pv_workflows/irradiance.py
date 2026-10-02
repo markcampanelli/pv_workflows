@@ -1,18 +1,14 @@
 """Plane-of-array (POA) irradiance workflows."""
 
 import typing
+from dataclasses import dataclass, fields
+from functools import cached_property
 
-from pv_workflows.atmosphere import AirMasses, Albedos, Irradiances
+from pv_workflows.atmosphere import Albedos, Irradiances, RelativeAirMasses
 from pv_workflows.common import Angles, Timestamps
 
 
-class SupportsExtraterrestrialDniResult(typing.TypedDict):
-    """Extraterrestrial DNI."""
-
-    extrarerrestrial_dni: Irradiances
-
-
-class SupportsExtraterrestrialDni(typing.Protocol):
+class SupportsComputeExtraterrestrialDni(typing.Protocol):
     """Interface for callables that compute extraterrestrial DNI."""
 
     def __call__(
@@ -25,14 +21,15 @@ class SupportsExtraterrestrialDni(typing.Protocol):
         """Compute extraterrestrial DNI from time and (optional) solar constant."""
 
 
-class SupportsDecompositionResult(typing.TypedDict):
-    """Interface for result from callables that compute decompositions."""
+@dataclass(frozen=True)
+class GhiDecomposition:
+    """Interface for result of computing GHI-decomposition."""
 
-    ground_dhi: Irradiances
-    ground_dni: Irradiances
+    dhi: Irradiances
+    dni: Irradiances
 
 
-class SupportsDecompositionZenith(typing.Protocol):
+class SupportsDecomposeGhiFromSunZenith(typing.Protocol):
     """
     Interface for callables that compute decompositions using (true) zenith of the Sun.
     """
@@ -42,29 +39,38 @@ class SupportsDecompositionZenith(typing.Protocol):
         self,
         *,
         timestamp: Timestamps,
-        ground_ghi: Irradiances,
+        ghi: Irradiances,
         sun_zenith: Angles,
         **_: typing.Any,
-    ) -> SupportsDecompositionResult:
+    ) -> GhiDecomposition:
         """
         Compute decomposition of GHI into DHI and DNI using (true) zenith of the Sun.
         """
 
 
-class SupportsPoaIrradianceComponentsResult(typing.TypedDict):
-    """
-    Interface for result of computing POA-irradance components from transposition of DHI
-    and DNI and ground diffuse from GHI and albedo.
-    """
+@dataclass(frozen=True)
+class PoaIrradianceComponents:
+    """Interface for result of computing POA-irradance components."""
 
-    poa_direct: Irradiances
-    poa_circumsolar: Irradiances
-    poa_isotropic: Irradiances
-    poa_horizon: Irradiances
-    poa_ground: Irradiances
+    direct: Irradiances
+    circumsolar: Irradiances
+    isotropic: Irradiances
+    horizon: Irradiances
+    ground: Irradiances
+
+    @cached_property
+    def total(self) -> Irradiances:
+        """Compute sum of POA irradiance components."""
+
+        return Irradiances(
+            array=sum(
+                self.__getattribute__(field.name).array for field in fields(self)
+            ),
+            units="W m-2",
+        )
 
 
-class SupportsPoaIrradianceComponents(typing.Protocol):
+class SupportsComputePoaIrradianceComponents(typing.Protocol):
     """Interface for callables that compute POA-irradiance components."""
 
     # FIXME Input angles should be validated for proper ranges.
@@ -77,12 +83,15 @@ class SupportsPoaIrradianceComponents(typing.Protocol):
         poa_azimuth: Angles,
         sun_zenith_apparent: Angles,
         sun_azimuth: Angles,
-        ground_dhi: Irradiances,
-        ground_dni: Irradiances,
+        dhi: Irradiances,
+        dni: Irradiances,
         extraterrestrial_dni: Irradiances,
-        relative_air_mass: AirMasses,
-        ground_ghi: Irradiances,
-        ground_albedo: Albedos,
+        relative_air_mass: RelativeAirMasses,
+        ghi: Irradiances,
+        albedo: Albedos,
         **_: typing.Any,
-    ) -> SupportsPoaIrradianceComponentsResult:
+    ) -> PoaIrradianceComponents:
         """Compute POA-irradance components."""
+
+
+# TODO Add SupportsComponentizePoaIrradiance.

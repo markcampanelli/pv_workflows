@@ -5,7 +5,7 @@ import math
 import typing
 import zoneinfo
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 
 import scipy.constants
@@ -18,31 +18,86 @@ _ABS_ZERO_DEGC = scipy.constants.convert_temperature(0, "Kelvin", "Celsius")
 
 @dataclass(frozen=True)
 class ValueWithUnits:
-    """A value (aka. number or scalar) with units."""
+    """A numeric value with units."""
 
     value: float | int
     units: str
 
-
-@dataclass(frozen=True)
-class ValueUnitless(ValueWithUnits):
-    """A value (aka. number or scalar) without units."""
-
-    units: str = typing.Literal[""]
-
     def __post_init__(self) -> None:
         """Validation."""
 
-        if self.units != "":
-            raise ValueError("Units specified for unitless value.")
+        if self.units == "":
+            raise ValueError("Empty units specified.")
+
+
+@dataclass(frozen=True)
+class ValuePercentage:
+    """A numeric value with percentage units."""
+
+    value: float | int
+    units: str = field(default="%", init=False)
+
+    @cached_property
+    def to_fractional(self) -> ValueUnitless:
+        """Percentage value to unitless value."""
+
+        return ValueUnitless(value=self.value / 100)
+
+
+@dataclass(frozen=True)
+class ValueUnitless:
+    """A numeric value without units."""
+
+    value: float | int
+    units: str = field(default="", init=False)
+
+    @cached_property
+    def to_percentage(self) -> ValuePercentage:
+        """Unitless value to percentage value."""
+
+        return ValuePercentage(value=100 * self.value)
 
 
 @dataclass(frozen=True)
 class ArrayWithUnits:
-    """A Python-Array-API array with units."""
+    """A numeric Python-Array-API array with units."""
 
     array: Array
     units: str
+
+    def __post_init__(self) -> None:
+        """Validation."""
+
+        if self.units == "":
+            raise ValueError("Empty units specified.")
+
+
+@dataclass(frozen=True)
+class ArrayPercentage:
+    """A numeric Python-Array-API array with units."""
+
+    array: Array
+    units: str = field(default="%", init=False)
+
+    @cached_property
+    def to_fractional(self) -> ArrayUnitless:
+        """Percentage value to unitless value."""
+
+        return ArrayUnitless(array=self.value / 100)
+
+
+@dataclass(frozen=True)
+class ArrayUnitless:
+    """A numeric Python-Array-API array without units."""
+
+    array: Array
+    units: str = field(default="", init=False)
+
+    @cached_property
+    def to_percentage(self) -> ArrayPercentage:
+        """Unitless array to percentage value."""
+
+        return ArrayPercentage(array=100 * self.array)
 
 
 @dataclass(frozen=True)
@@ -81,6 +136,8 @@ class Angle(ValueWithUnits):
     def __post_init__(self) -> None:
         """Validation."""
 
+        super().__post_init__()
+
         if self.units not in ("rad", "deg", "°"):
             raise ValueError("Angle units are not rad, deg, or °.")
 
@@ -110,9 +167,11 @@ class AngleCosine(ValueUnitless):
     def __post_init__(self):
         """Validation."""
 
+        super().__post_init__()
+
         if (self.value < -1) or (self.value > 1):
             raise ValueError(
-                "AngleCosine is not between negative one and one, inclusive."
+                "Angle cosine is not between negative one and one, inclusive."
             )
 
 
@@ -124,6 +183,8 @@ class Angles(ArrayWithUnits):
 
     def __post_init__(self) -> None:
         """Validation."""
+
+        super().__post_init__()
 
         if self.units not in ("rad", "deg", "°"):
             raise ValueError("Angles units are not rad, deg, or °.")
@@ -156,6 +217,8 @@ class Height(ValueWithUnits):
     def __post_init__(self) -> None:
         """Validation."""
 
+        super().__post_init__()
+
         if self.units not in ("m",):
             raise ValueError("Height units are not m.")
 
@@ -171,6 +234,8 @@ class Temperature(ValueWithUnits):
 
     def __post_init__(self) -> None:
         """Validation."""
+
+        super().__post_init__()
 
         if self.units not in ("K", "degC", "°C"):
             raise ValueError("Temperature units are not K, degC, or °C.")
@@ -216,8 +281,10 @@ class Temperatures(ArrayWithUnits):
     def __post_init__(self) -> None:
         """Validation."""
 
+        super().__post_init__()
+
         if self.units not in ("K", "degC", "°C"):
-            raise ValueError("Temperatures units are not K, degC, or °C.")
+            raise ValueError("Temperature units are not K, degC, or °C.")
 
         if XP.any(self.to_degC.array <= _ABS_ZERO_DEGC):
             raise ValueError("Temperatures not all greater than absolute zero.")
@@ -253,33 +320,25 @@ class Temperatures(ArrayWithUnits):
 
 @dataclass(frozen=True)
 class Absorption(ValueUnitless):
-    """Unitless absorption value."""
+    """Absorption value (unitless, not percentage)."""
 
-    units: typing.Literal[""]
-
-    def __post_init__(self) -> None:
+    def __post_init__(self):
         """Validation."""
 
-        if self.units not in ("",):
-            raise ValueError("Absorption is not unitless.")
+        super().__post_init__()
 
         if (self.value < 0) or (self.value > 1):
-            raise ValueError("Absorption is not between zero and one, inclusive.")
+            raise ValueError("Absorption not between zero and one, inclusive")
 
 
 @dataclass(frozen=True)
-class Efficiency(ValueWithUnits):
-    """Efficiency value with (optional) units."""
+class Efficiency(ValueUnitless):
+    """Efficiency value (unitless, not percentage)."""
 
-    units: typing.Literal["", "pc", "%"]
-
-    def __post_init__(self) -> None:
+    def __post_init__(self):
         """Validation."""
 
-        if self.units not in ("", "pc", "%"):
-            raise ValueError("Efficiency is not unitless or units are not pc or %.")
+        super().__post_init__()
 
-        if (self.to_frac.value < 0) or (self.to_frac.value > 1):
-            raise ValueError("Efficiency is not between zero and one, inclusive.")
-
-    # FIXME Conversions.
+        if (self.value < 0) or (self.value > 1):
+            raise ValueError("Efficiency not between zero and one, inclusive")

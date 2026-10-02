@@ -6,12 +6,12 @@ import numpy
 import pvlib
 
 from pv_workflows import XP
-from pv_workflows.common import Angles, ArrayWithUnits, Temperatures
+from pv_workflows.common import Angles, Temperatures
 from pv_workflows.location import (
     Altitude,
     Latitude,
     Longitude,
-    SupportsSunPositionResult,
+    SunPosition,
     Timestamps,
 )
 
@@ -26,7 +26,7 @@ def sun_position_nrel_numpy(
     altitude: Altitude,
     dry_bulb_temperature: Temperatures | None,
     **kwargs,
-) -> SupportsSunPositionResult:
+) -> SunPosition:
     """
     Compute position of Sun from location, time, and weather on Earth.
 
@@ -51,19 +51,14 @@ def sun_position_nrel_numpy(
         **kwargs,
     )
 
-    return SupportsSunPositionResult(
-        sun_azimuth=Angles(array=XP.asarray(result["azimuth"].to_numpy()), units="deg"),
-        sun_zenith=Angles(array=XP.asarray(result["zenith"].to_numpy()), units="deg"),
-        sun_zenith_apparent=Angles(
+    return SunPosition(
+        azimuth=Angles(array=XP.asarray(result["azimuth"].to_numpy()), units="deg"),
+        zenith=Angles(array=XP.asarray(result["zenith"].to_numpy()), units="deg"),
+        zenith_apparent=Angles(
             array=XP.asarray(result["apparent_zenith"].to_numpy()), units="deg"
         ),
-        sun_elevation=Angles(
-            array=XP.asarray(result["elevation"].to_numpy()), units="deg"
-        ),
-        sun_elevation_apparent=Angles(
+        elevation=Angles(array=XP.asarray(result["elevation"].to_numpy()), units="deg"),
+        elevation_apparent=Angles(
             array=XP.asarray(result["apparent_elevation"].to_numpy()), units="deg"
-        ),
-        equation_of_time=ArrayWithUnits(
-            array=XP.asarray(result["equation_of_time"].to_numpy()), units="min"
         ),
     )
