@@ -6,14 +6,13 @@ import numpy
 import pvlib
 
 from pv_workflows import XP
-from pv_workflows.atmosphere import Temperature
-from pv_workflows.common import Angle, ArrayWithUnits
+from pv_workflows.common import Angles, ArrayWithUnits, Temperatures
 from pv_workflows.location import (
     Altitude,
     Latitude,
     Longitude,
     SupportsSunPositionResult,
-    Timestamp,
+    Timestamps,
 )
 
 _GET_SOLAR_POSITION_SIG = inspect.signature(pvlib.solarposition.get_solarposition)
@@ -21,11 +20,11 @@ _GET_SOLAR_POSITION_SIG = inspect.signature(pvlib.solarposition.get_solarpositio
 
 def sun_position_nrel_numpy(
     *,
-    timestamp: Timestamp,
+    timestamp: Timestamps,
     latitude: Latitude,
     longitude: Longitude,
     altitude: Altitude,
-    dry_bulb_temperature: Temperature | None,
+    dry_bulb_temperature: Temperatures | None,
     **kwargs,
 ) -> SupportsSunPositionResult:
     """
@@ -33,6 +32,8 @@ def sun_position_nrel_numpy(
 
     Implements pv_workflows.location.SupportsSunPosition.
     """
+
+    pressure = _GET_SOLAR_POSITION_SIG.parameters["pressure"].default
 
     if dry_bulb_temperature is None:
         temperature = _GET_SOLAR_POSITION_SIG.parameters["temperature"].default
@@ -44,22 +45,22 @@ def sun_position_nrel_numpy(
         latitude.value,
         longitude.value,
         altitude.value,
-        _GET_SOLAR_POSITION_SIG.parameters["pressure"].default,
+        pressure,
         "nrel_numpy",
         temperature,
         **kwargs,
     )
 
     return SupportsSunPositionResult(
-        sun_azimuth=Angle(array=XP.asarray(result["azimuth"].to_numpy()), units="deg"),
-        sun_zenith=Angle(array=XP.asarray(result["zenith"].to_numpy()), units="deg"),
-        sun_zenith_apparent=Angle(
+        sun_azimuth=Angles(array=XP.asarray(result["azimuth"].to_numpy()), units="deg"),
+        sun_zenith=Angles(array=XP.asarray(result["zenith"].to_numpy()), units="deg"),
+        sun_zenith_apparent=Angles(
             array=XP.asarray(result["apparent_zenith"].to_numpy()), units="deg"
         ),
-        sun_elevation=Angle(
+        sun_elevation=Angles(
             array=XP.asarray(result["elevation"].to_numpy()), units="deg"
         ),
-        sun_elevation_apparent=Angle(
+        sun_elevation_apparent=Angles(
             array=XP.asarray(result["apparent_elevation"].to_numpy()), units="deg"
         ),
         equation_of_time=ArrayWithUnits(

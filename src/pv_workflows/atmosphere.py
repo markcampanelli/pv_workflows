@@ -2,16 +2,13 @@
 
 import typing
 from dataclasses import dataclass
-from functools import cached_property
-
-import scipy.constants
 
 from pv_workflows import XP
-from pv_workflows.common import Angle, Array, ArrayWithUnits, Height, Timestamp
+from pv_workflows.common import Angles, ArrayWithUnits, Height, ValueWithUnits
 
 
 @dataclass(frozen=True)
-class Pressure(ArrayWithUnits):
+class Pressures(ArrayWithUnits):
     """Pressure array with units."""
 
     units: typing.Literal["Pa"]
@@ -20,47 +17,11 @@ class Pressure(ArrayWithUnits):
         """Validation."""
 
         if self.units not in ("Pa"):
-            raise ValueError("Pressure units must be Pa.")
+            raise ValueError("Pressures units are not Pa.")
 
 
 @dataclass(frozen=True)
-class Temperature(ArrayWithUnits):
-    """Temperature array with units."""
-
-    units: typing.Literal["K", "degC", "°C"]
-
-    def __post_init__(self) -> None:
-        """Validation."""
-
-        if self.units not in ("K", "degC", "°C"):
-            raise ValueError("Temperature units must be K, degC, or °C.")
-
-        if XP.any(self.array_K <= 0):
-            raise ValueError(
-                "Temperature cannot be less than or equal to absolute zero."
-            )
-
-    @cached_property
-    def array_degC(self) -> Array:
-        """Temperature array with degrees Celsius units."""
-
-        if self.units in ("degC", "°C"):
-            return self.array
-
-        return scipy.constants.convert_temperature(self.array, "Kelvin", "Celsius")
-
-    @cached_property
-    def array_K(self) -> Array:
-        """Temperature array with Kelvin units."""
-
-        if self.units in ("K",):
-            return self.array
-
-        return scipy.constants.convert_temperature(self.array, "Celsius", "Kelvin")
-
-
-@dataclass(frozen=True)
-class WindSpeed(ArrayWithUnits):
+class WindSpeeds(ArrayWithUnits):
     """Wind speed array with units and at specified height."""
 
     units: typing.Literal["m s-1"]
@@ -70,14 +31,30 @@ class WindSpeed(ArrayWithUnits):
         """Validation."""
 
         if self.units not in ("m s-1",):
-            raise ValueError("WindSpeed units must be m s-1.")
+            raise ValueError("WindSpeeds units are not m s-1.")
 
         if XP.any(self.array < 0):
-            raise ValueError("WindSpeed must not be negative.")
+            raise ValueError("WindSpeeds are not all non-negative.")
 
 
 @dataclass(frozen=True)
-class Irradiance(ArrayWithUnits):
+class Irradiance(ValueWithUnits):
+    """Irradiance value with units."""
+
+    units: typing.Literal["W m-2"]
+
+    def __post_init__(self) -> None:
+        """Validation."""
+
+        if self.units not in ("W m-2",):
+            raise ValueError("Irradiance units are not W m-2.")
+
+        if self.value < 0:
+            raise ValueError("Irradiance is not non-negative.")
+
+
+@dataclass(frozen=True)
+class Irradiances(ArrayWithUnits):
     """Irradiance array with units."""
 
     units: typing.Literal["W m-2"]
@@ -86,14 +63,14 @@ class Irradiance(ArrayWithUnits):
         """Validation."""
 
         if self.units not in ("W m-2",):
-            raise ValueError("Irradiance units must be W m-2.")
+            raise ValueError("Irradiances units must be W m-2.")
 
         if XP.any(self.array < 0):
-            raise ValueError("Irradiance must not be negative.")
+            raise ValueError("Irradiances are not all non-negative.")
 
 
 @dataclass(frozen=True)
-class AirMass(ArrayWithUnits):
+class AirMasses(ArrayWithUnits):
     """Air mass array with units."""
 
     units: typing.Literal[""]
@@ -102,14 +79,14 @@ class AirMass(ArrayWithUnits):
         """Validation."""
 
         if self.units not in ("",):
-            raise ValueError("Air mass must be unitless.")
+            raise ValueError("Air masses are not unitless.")
 
         if XP.any(self.array < 1):
-            raise ValueError("Air mass must not be less than one.")
+            raise ValueError("Air masses are not all greater than or equal to one.")
 
 
 @dataclass(frozen=True)
-class Albedo(ArrayWithUnits):
+class Albedos(ArrayWithUnits):
     """Albedo array with units."""
 
     units: typing.Literal[""]
@@ -118,38 +95,40 @@ class Albedo(ArrayWithUnits):
         """Validation."""
 
         if self.units not in ("",):
-            raise ValueError("Albedo must be unitless.")
+            raise ValueError("Albedos are not unitless.")
 
         if XP.any(self.array < 0) or XP.any(self.array > 1):
-            raise ValueError("Albedo must be between zero and one.")
+            raise ValueError("Albedos are not all between zero and one, inclusive.")
 
 
 # FIXME Need to adopt a convention for air mass when zenith is greater than 90 degrees.
 
 
-class SupportsAirMassRelativeZenithApparent(typing.Protocol):
-    """
-    Interface for callables that compute relative air mass at sea level from apparent
-    zenith of Sun.
-    """
+class SupportsRelativeAirMassResult(typing.TypedDict):
+    """Relative air mass at sea level."""
 
-    def __call__(self, *, sun_zenith_apparent: Angle, **_: typing.Any) -> AirMass:
-        """Compute relative air mass at sea level from apparent zenith of Sun."""
+    relative_air_mass: AirMasses
 
 
-class SupportsAirMassRelativeZenith(typing.Protocol):
+class SupportsRelativeAirMassZenith(typing.Protocol):
     """
     Interface for callables that compute relative air mass at sea level from (true)
     zenith of Sum.
     """
 
-    def __call__(self, *, sun_zenith: Angle, **_: typing.Any) -> Array:
+    def __call__(
+        self, *, sun_zenith: Angles, **_: typing.Any
+    ) -> SupportsRelativeAirMassResult:
         """Compute relative air mass at sea level from (true) zenith of Sun."""
 
 
-# FIXME To be defined and implemented.
-class SupportsExtraterrestrialDni(typing.Protocol):
-    """Interface for callables that compute extraterrestrial DNI."""
+class SupportsRelativeAirMassZenithApparent(typing.Protocol):
+    """
+    Interface for callables that compute relative air mass at sea level from apparent
+    zenith of Sun.
+    """
 
-    def __call__(self, *, timestamp: Timestamp) -> Irradiance:
-        """Compute extraterrestrial DNI from FIXME."""
+    def __call__(
+        self, *, sun_zenith_apparent: Angles, **_: typing.Any
+    ) -> SupportsRelativeAirMassResult:
+        """Compute relative air mass at sea level from apparent zenith of Sun."""

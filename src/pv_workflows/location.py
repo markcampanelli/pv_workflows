@@ -3,7 +3,7 @@
 import typing
 from dataclasses import dataclass
 
-from pv_workflows.common import Angle, Timestamp, ValueWithUnits
+from pv_workflows.common import Angles, Timestamps, ValueWithUnits
 
 
 @dataclass(frozen=True)
@@ -60,18 +60,18 @@ class Altitude(ValueWithUnits):
 class SupportsSunPositionResult(typing.TypedDict):
     """Position of Sun from time and location on Earth."""
 
-    sun_azimuth: Angle
-    sun_zenith: Angle
-    sun_zenith_apparent: Angle
-    sun_elevation: Angle
-    sun_elevation_apparent: Angle
+    sun_azimuth: Angles
+    sun_zenith: Angles
+    sun_zenith_apparent: Angles
+    sun_elevation: Angles
+    sun_elevation_apparent: Angles
 
 
 class SupportsSunPosition(typing.Protocol):
     def __call__(
         self,
         *,
-        timestamps: Timestamp,
+        timestamp: Timestamps,
         latitude: Latitude,
         longitude: Longitude,
         altitude: Altitude,

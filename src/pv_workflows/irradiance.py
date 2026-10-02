@@ -2,15 +2,34 @@
 
 import typing
 
-from pv_workflows.atmosphere import AirMass, Albedo, Irradiance
-from pv_workflows.common import Angle, Timestamp
+from pv_workflows.atmosphere import AirMasses, Albedos, Irradiances
+from pv_workflows.common import Angles, Timestamps
+
+
+class SupportsExtraterrestrialDniResult(typing.TypedDict):
+    """Extraterrestrial DNI."""
+
+    extrarerrestrial_dni: Irradiances
+
+
+class SupportsExtraterrestrialDni(typing.Protocol):
+    """Interface for callables that compute extraterrestrial DNI."""
+
+    def __call__(
+        self,
+        *,
+        timestamp: Timestamps,
+        solar_constant: Irradiances | None,
+        **_: typing.Any,
+    ) -> Irradiances:
+        """Compute extraterrestrial DNI from time and (optional) solar constant."""
 
 
 class SupportsDecompositionResult(typing.TypedDict):
     """Interface for result from callables that compute decompositions."""
 
-    ground_dhi: Irradiance
-    ground_dni: Irradiance
+    ground_dhi: Irradiances
+    ground_dni: Irradiances
 
 
 class SupportsDecompositionZenith(typing.Protocol):
@@ -18,13 +37,13 @@ class SupportsDecompositionZenith(typing.Protocol):
     Interface for callables that compute decompositions using (true) zenith of the Sun.
     """
 
-    # FIXME Input angle can be validated for proper ranges.
+    # FIXME Input angle should be validated for proper ranges.
     def __call__(
         self,
         *,
-        timestamps: Timestamp,
-        ground_ghi: Irradiance,
-        sun_zenith: Angle,
+        timestamp: Timestamps,
+        ground_ghi: Irradiances,
+        sun_zenith: Angles,
         **_: typing.Any,
     ) -> SupportsDecompositionResult:
         """
@@ -32,38 +51,38 @@ class SupportsDecompositionZenith(typing.Protocol):
         """
 
 
-class SupportsPoaComponentsResult(typing.TypedDict):
+class SupportsPoaIrradianceComponentsResult(typing.TypedDict):
     """
     Interface for result of computing POA-irradance components from transposition of DHI
     and DNI and ground diffuse from GHI and albedo.
     """
 
-    poa_direct: Irradiance
-    poa_circumsolar: Irradiance
-    poa_isotropic: Irradiance
-    poa_horizon: Irradiance
-    poa_ground: Irradiance
+    poa_direct: Irradiances
+    poa_circumsolar: Irradiances
+    poa_isotropic: Irradiances
+    poa_horizon: Irradiances
+    poa_ground: Irradiances
 
 
-class SupportsPoaComponents(typing.Protocol):
+class SupportsPoaIrradianceComponents(typing.Protocol):
     """Interface for callables that compute POA-irradiance components."""
 
-    # FIXME Input angles can be validated for proper ranges.
+    # FIXME Input angles should be validated for proper ranges.
     # FIXME Algorithms may return negative DHI, which is currently invalid irradiance.
-    # FIMXE How does this generalize for back-side irradiance?
+    # FIXME How does this generalize for back-side irradiance?
     def __call__(
         self,
         *,
-        poa_tilt: Angle,
-        poa_azimuth: Angle,
-        sun_zenith_apparent: Angle,
-        sun_azimuth: Angle,
-        ground_dhi: Irradiance,
-        ground_dni: Irradiance,
-        extraterrestrial_dni: Irradiance,
-        air_mass_relative: AirMass,
-        ground_ghi: Irradiance,
-        ground_albedo: Albedo,
+        poa_tilt: Angles,
+        poa_azimuth: Angles,
+        sun_zenith_apparent: Angles,
+        sun_azimuth: Angles,
+        ground_dhi: Irradiances,
+        ground_dni: Irradiances,
+        extraterrestrial_dni: Irradiances,
+        relative_air_mass: AirMasses,
+        ground_ghi: Irradiances,
+        ground_albedo: Albedos,
         **_: typing.Any,
-    ) -> SupportsPoaComponentsResult:
+    ) -> SupportsPoaIrradianceComponentsResult:
         """Compute POA-irradance components."""
