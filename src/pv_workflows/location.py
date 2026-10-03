@@ -3,11 +3,17 @@
 import typing
 from dataclasses import dataclass
 
-from pv_workflows.common import Angles, Timestamps, ValueWithUnits
+from pv_workflows.common import (
+    AzimuthAngles,
+    ElevationAngles,
+    ScalarWithUnits,
+    Timestamps,
+    ZenithAngles,
+)
 
 
 @dataclass(frozen=True)
-class Latitude(ValueWithUnits):
+class Latitude(ScalarWithUnits):
     """Latitude on Earth."""
 
     units: typing.Literal["deg", "°"]
@@ -26,7 +32,7 @@ class Latitude(ValueWithUnits):
 
 
 @dataclass(frozen=True)
-class Longitude(ValueWithUnits):
+class Longitude(ScalarWithUnits):
     """Longitude on Earth."""
 
     units: typing.Literal["deg", "°"]
@@ -45,7 +51,7 @@ class Longitude(ValueWithUnits):
 
 
 @dataclass(frozen=True)
-class Altitude(ValueWithUnits):
+class Altitude(ScalarWithUnits):
     """Altitude on Earth relative to mean sea level."""
 
     units: typing.Literal["m"]
@@ -61,11 +67,11 @@ class Altitude(ValueWithUnits):
 class SunPosition:
     """Position of Sun from time and location on Earth."""
 
-    azimuth: Angles
-    zenith: Angles
-    zenith_apparent: Angles
-    elevation: Angles
-    elevation_apparent: Angles
+    azimuth: AzimuthAngles
+    zenith: ZenithAngles
+    zenith_apparent: ZenithAngles
+    elevation: ElevationAngles
+    elevation_apparent: ElevationAngles
 
 
 class SupportsComputeSunPosition(typing.Protocol):

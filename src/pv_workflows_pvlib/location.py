@@ -6,7 +6,12 @@ import numpy
 import pvlib
 
 from pv_workflows import XP
-from pv_workflows.common import Angles, Temperatures
+from pv_workflows.common import (
+    AzimuthAngles,
+    ElevationAngles,
+    Temperatures,
+    ZenithAngles,
+)
 from pv_workflows.location import (
     Altitude,
     Latitude,
@@ -38,7 +43,7 @@ def compute_sun_position_nrel_numpy(
     if dry_bulb_temperature is None:
         temperature = _GET_SOLAR_POSITION_SIG.parameters["temperature"].default
     else:
-        temperature = numpy.asarray(dry_bulb_temperature.array)
+        temperature = numpy.asarray(dry_bulb_temperature.value)
 
     result = pvlib.solarposition.get_solarposition(
         timestamp.sequence,
@@ -52,13 +57,17 @@ def compute_sun_position_nrel_numpy(
     )
 
     return SunPosition(
-        azimuth=Angles(array=XP.asarray(result["azimuth"].to_numpy()), units="deg"),
-        zenith=Angles(array=XP.asarray(result["zenith"].to_numpy()), units="deg"),
-        zenith_apparent=Angles(
-            array=XP.asarray(result["apparent_zenith"].to_numpy()), units="deg"
+        azimuth=AzimuthAngles(
+            value=XP.asarray(result["azimuth"].to_numpy()), units="deg"
         ),
-        elevation=Angles(array=XP.asarray(result["elevation"].to_numpy()), units="deg"),
-        elevation_apparent=Angles(
-            array=XP.asarray(result["apparent_elevation"].to_numpy()), units="deg"
+        zenith=ZenithAngles(value=XP.asarray(result["zenith"].to_numpy()), units="deg"),
+        zenith_apparent=ZenithAngles(
+            value=XP.asarray(result["apparent_zenith"].to_numpy()), units="deg"
+        ),
+        elevation=ElevationAngles(
+            value=XP.asarray(result["elevation"].to_numpy()), units="deg"
+        ),
+        elevation_apparent=ElevationAngles(
+            value=XP.asarray(result["apparent_elevation"].to_numpy()), units="deg"
         ),
     )

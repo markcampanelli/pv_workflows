@@ -5,11 +5,11 @@ from dataclasses import dataclass
 
 from pv_workflows import XP
 from pv_workflows.common import (
-    Angles,
     ArrayUnitless,
     ArrayWithUnits,
     Height,
-    ValueWithUnits,
+    ScalarWithUnits,
+    ZenithAngles,
 )
 
 
@@ -43,12 +43,12 @@ class WindSpeeds(ArrayWithUnits):
         if self.units not in ("m s-1",):
             raise ValueError("Wind speed units are not m s-1.")
 
-        if XP.any(self.array < 0):
+        if XP.any(self.value < 0):
             raise ValueError("Wind speeds are not all non-negative.")
 
 
 @dataclass(frozen=True)
-class Irradiance(ValueWithUnits):
+class Irradiance(ScalarWithUnits):
     """Irradiance value with units."""
 
     units: typing.Literal["W m-2"]
@@ -79,7 +79,7 @@ class Irradiances(ArrayWithUnits):
         if self.units not in ("W m-2",):
             raise ValueError("Irradiance units must be W m-2.")
 
-        if XP.any(self.array < 0):
+        if XP.any(self.value < 0):
             raise ValueError("Irradiances are not all non-negative.")
 
 
@@ -90,7 +90,7 @@ class Albedos(ArrayUnitless):
     def __post_init__(self) -> None:
         """Validation."""
 
-        if XP.any(self.array < 0) or XP.any(self.array > 1):
+        if XP.any(self.value < 0) or XP.any(self.value > 1):
             raise ValueError("Albedos are not all between zero and one, inclusive.")
 
 
@@ -103,7 +103,7 @@ class AbsoluteAirMasses(ArrayUnitless):
 
         super().__post_init__()
 
-        if XP.any(self.array <= 0):
+        if XP.any(self.value <= 0):
             raise ValueError("Absolute air masses are not all greater than zero.")
 
 
@@ -114,7 +114,7 @@ class RelativeAirMasses(ArrayUnitless):
     def __post_init__(self) -> None:
         """Validation."""
 
-        if XP.any(self.array < 1):
+        if XP.any(self.value < 1):
             raise ValueError(
                 "Relative air masses are not all greater than or equal to one."
             )
@@ -128,7 +128,9 @@ class SupportsComputeRelativeAirMassFromSunZenith(typing.Protocol):
     Interface for callables that compute relative air mass from (true) zenith of Sum.
     """
 
-    def __call__(self, *, sun_zenith: Angles, **_: typing.Any) -> RelativeAirMasses:
+    def __call__(
+        self, *, sun_zenith: ZenithAngles, **_: typing.Any
+    ) -> RelativeAirMasses:
         """Compute relative air mass (at sea level) from (true) zenith of Sun."""
 
 
@@ -138,6 +140,6 @@ class SupportsComputeRelativeAirMassFromSunZenithApparent(typing.Protocol):
     """
 
     def __call__(
-        self, *, sun_zenith_apparent: Angles, **_: typing.Any
+        self, *, sun_zenith_apparent: ZenithAngles, **_: typing.Any
     ) -> RelativeAirMasses:
         """Compute relative air mass (at sea level) from apparent zenith of Sun."""

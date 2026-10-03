@@ -7,11 +7,11 @@ import pvlib
 
 from pv_workflows import XP
 from pv_workflows.atmosphere import RelativeAirMasses
-from pv_workflows.common import Angles
+from pv_workflows.common import ZenithAngles
 
 
 def compute_relative_air_mass_kastenyoung1989(
-    *, sun_zenith_apparent: Angles, **_: typing.Any
+    *, sun_zenith_apparent: ZenithAngles, **_: typing.Any
 ) -> RelativeAirMasses:
     """
     Compute relative air mass at sea level from apparent zenith of Sun using pvlib's
@@ -21,16 +21,16 @@ def compute_relative_air_mass_kastenyoung1989(
     """
 
     return RelativeAirMasses(
-        array=XP.asarray(
+        value=XP.asarray(
             pvlib.atmosphere.get_relative_airmass(
-                numpy.asarray(sun_zenith_apparent.to_deg.array), model="kastenyoung1989"
+                numpy.asarray(sun_zenith_apparent.to_deg.value), model="kastenyoung1989"
             )
         )
     )
 
 
 def compute_relative_air_mass_young1994(
-    *, sun_zenith: Angles, **_: typing.Any
+    *, sun_zenith: ZenithAngles, **_: typing.Any
 ) -> RelativeAirMasses:
     """
     Compute relative air mass at sea level from (true) zenith of Sun using pvlib's
@@ -40,9 +40,9 @@ def compute_relative_air_mass_young1994(
     """
 
     return RelativeAirMasses(
-        array=XP.asarray(
+        value=XP.asarray(
             pvlib.atmosphere.get_relative_airmass(
-                numpy.asarray(sun_zenith.to_deg.array), model="young1994"
+                numpy.asarray(sun_zenith.to_deg.value), model="young1994"
             )
         )
     )

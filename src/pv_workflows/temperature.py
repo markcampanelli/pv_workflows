@@ -4,12 +4,12 @@ import typing
 from dataclasses import dataclass
 
 from pv_workflows.atmosphere import WindSpeeds
-from pv_workflows.common import Temperatures, ValueWithUnits
+from pv_workflows.common import ScalarWithUnits, Temperatures
 from pv_workflows.irradiance import Irradiances
 
 
 @dataclass(frozen=True)
-class Uc(ValueWithUnits):
+class Uc(ScalarWithUnits):
     """Thermal-conduction coefficient value (positive) with units."""
 
     units: typing.Literal["W m-2 degC-1"]
@@ -25,7 +25,7 @@ class Uc(ValueWithUnits):
 
 
 @dataclass(frozen=True)
-class Uv(ValueWithUnits):
+class Uv(ScalarWithUnits):
     """Thermal-convection coefficient value (non-negative) with units."""
 
     units: typing.Literal["W s m-3 degC-1"]
@@ -78,11 +78,11 @@ def compute_cell_temperature_heat_balance(
     """
 
     return Temperatures(
-        array=dry_bulb_temperature.array
-        + poa_irradiance.array
+        value=dry_bulb_temperature.value
+        + poa_irradiance.value
         / (
             thermal_conduction_coefficient.value
-            + thermal_convection_coefficient.value * wind_speed.array
+            + thermal_convection_coefficient.value * wind_speed.value
         ),
         units="degC",
     )
