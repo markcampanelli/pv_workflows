@@ -6,6 +6,7 @@ import numpy
 import pvlib
 
 from pv_workflows import XP
+from pv_workflows.atmosphere import Pressures
 from pv_workflows.common import (
     AzimuthAngles,
     ElevationAngles,
@@ -29,6 +30,7 @@ def compute_sun_position_nrel_numpy(
     latitude: Latitude,
     longitude: Longitude,
     altitude: Altitude,
+    pressure: Pressures | None,
     dry_bulb_temperature: Temperatures | None,
     **kwargs,
 ) -> SunPosition:
@@ -38,7 +40,10 @@ def compute_sun_position_nrel_numpy(
     Implements pv_workflows.location.SupportsComputeSunPosition.
     """
 
-    pressure = _GET_SOLAR_POSITION_SIG.parameters["pressure"].default
+    if pressure is None:
+        pressure = _GET_SOLAR_POSITION_SIG.parameters["pressure"].default
+    else:
+        pressure = numpy.asarray(pressure.value)
 
     if dry_bulb_temperature is None:
         temperature = _GET_SOLAR_POSITION_SIG.parameters["temperature"].default

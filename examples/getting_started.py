@@ -1,9 +1,14 @@
-"""Getting started with a basic mono-facial PV energy simulation."""
+"""
+Getting started with a single-panel, mono-facial, fixed-tilt, PV energy simulation.
+"""
 
 import datetime
+import os
 import zoneinfo
 
 import numpy
+import pandas
+import pvlib  # FIXME Direct reference to implementation should not be necessary.
 
 import pv_workflows.atmosphere
 import pv_workflows.common
@@ -12,6 +17,8 @@ import pv_workflows.temperature
 import pv_workflows_pvlib.atmosphere
 import pv_workflows_pvlib.irradiance
 import pv_workflows_pvlib.location
+
+# Energy-simulation configuration, with related elements collected into dictionaries.
 
 # Alternative method to create compatible timestamp sequence using pandas.
 # timestamp = pv_workflows.common.Timestamps(
@@ -27,37 +34,63 @@ import pv_workflows_pvlib.location
 #     )
 # )
 
-# Energy-simulation configuration, with related elements collected into dictionaries.
+weather_filepath = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "weather",
+    "346177_45.69_-111.02_tgy-2025.csv",
+)
+weather_nsrdb_header = pandas.read_csv(weather_filepath, nrows=1)
+
+weather_nsrdb_data = pandas.read_csv(weather_filepath, skiprows=2)
+
+# Construct timestamps from localized weather timestamps.
+# Note that NSRDB does not shift hours for daylight-savings-time events.
+tzinfo = zoneinfo.ZoneInfo(
+    f"Etc/GMT{-int(weather_nsrdb_header['Time Zone'].item()):+}"  # Flip sign.
+)
 timestamp = pv_workflows.common.Timestamps(
-    sequence=(
-        datetime.datetime(2026, 6, 22, 12, tzinfo=zoneinfo.ZoneInfo("America/Denver")),
+    sequence=tuple(
+        datetime.datetime(year, month, day, hour=hour, minute=minute, tzinfo=tzinfo)
+        for year, month, day, hour, minute in zip(
+            weather_nsrdb_data["Year"],
+            weather_nsrdb_data["Month"],
+            weather_nsrdb_data["Day"],
+            weather_nsrdb_data["Hour"],
+            weather_nsrdb_data["Minute"],
+        )
     )
 )
+
 location = {
     "latitude": pv_workflows.location.Latitude(value=45.677, units="deg"),
     "longitude": pv_workflows.location.Longitude(value=-111.043, units="deg"),
     "altitude": pv_workflows.location.Altitude(value=4820, units="m"),
 }
 poa_geometry = {
-    "poa_tilt": pv_workflows.common.TiltAngles(value=45.0, units="deg"),
+    "poa_tilt": pv_workflows.common.TiltAngles(
+        value=location["latitude"].value, units="deg"
+    ),
     "poa_azimuth": pv_workflows.common.AzimuthAngles(value=180.0, units="deg"),
 }
-incident_angle = pv_workflows.irradiance.IncidentAngles(
-    value=numpy.array(20.0), units="deg"
-)
 weather = {
     "dry_bulb_temperature": pv_workflows.common.Temperatures(
-        value=numpy.array(25.0), units="degC"
+        value=weather_nsrdb_data["Temperature"].to_numpy(), units="degC"
     ),
     "wind_speed": pv_workflows.atmosphere.WindSpeeds(
-        value=numpy.array(1.0),
+        value=weather_nsrdb_data["Wind Speed"].to_numpy(),
         units="m s-1",
         height=pv_workflows.common.Height(value=10, units="m"),
     ),
-    "ghi": pv_workflows.atmosphere.Irradiances(
-        value=numpy.array(1000.0), units="W m-2"
+    "pressure": pv_workflows.atmosphere.Pressures(
+        value=100 * weather_nsrdb_data["Pressure"].to_numpy(),  # mbar to Pa
+        units="Pa",
     ),
-    "albedo": pv_workflows.atmosphere.Albedos(value=numpy.array(0.124)),
+    "ghi": pv_workflows.atmosphere.Irradiances(
+        value=weather_nsrdb_data["GHI"].to_numpy(), units="W m-2"
+    ),
+    "albedo": pv_workflows.atmosphere.Albedos(
+        value=weather_nsrdb_data["Surface Albedo"].to_numpy()
+    ),
 }
 heat_balance_coefficients = {
     "thermal_conduction_coefficient": pv_workflows.temperature.Uc(
@@ -119,12 +152,14 @@ sun_position = pv_workflows_pvlib.location.compute_sun_position_nrel_numpy(
     timestamp=timestamp,
     **location,  # Contains only latitude, longitude, and altitude.
     dry_bulb_temperature=weather["dry_bulb_temperature"],
+    pressure=weather["pressure"],
 )
 
 print(f"Sun position:\n{sun_position}")
 
 print()
 
+# TODO Compare results using this decomposition with weather-file DHI and DNI.
 decomposition = pv_workflows_pvlib.irradiance.decompose_ghi_erbs_driesse(
     timestamp=timestamp,
     ghi=weather["ghi"],
@@ -148,12 +183,13 @@ sun_position_sea_level = pv_workflows_pvlib.location.compute_sun_position_nrel_n
     longitude=location["longitude"],
     altitude=pv_workflows.location.Altitude(value=0, units="m"),
     dry_bulb_temperature=weather["dry_bulb_temperature"],
+    pressure=weather["pressure"],
 )
 
 # Compute relative air mass (at sea level).
 relative_air_mass = (
     pv_workflows_pvlib.atmosphere.compute_relative_air_mass_kastenyoung1989(
-        sun_zenith_apparent=sun_position_sea_level.zenith_apparent,
+        sun_zenith_apparent=sun_position.zenith_apparent,
     )
 )
 
@@ -191,6 +227,16 @@ compute_iam_from_incident_angle = (
     pv_workflows.irradiance.construct_compute_iam_from_incident_angle_pchip(
         **iam_profile
     )
+)
+
+incident_angle = pv_workflows.irradiance.IncidentAngles(
+    value=pvlib.irradiance.aoi(
+        numpy.asarray(poa_geometry["poa_tilt"].value),
+        numpy.asarray(poa_geometry["poa_azimuth"].value),
+        numpy.asarray(sun_position.zenith.value),
+        numpy.asarray(sun_position.azimuth.value),
+    ),
+    units="deg",
 )
 
 poa_iam_direct_circumsolar = pv_workflows.irradiance.compute_poa_iam_direct_circumsolar(

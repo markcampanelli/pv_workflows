@@ -1,4 +1,8 @@
-"""Atmosphere workflows."""
+"""
+Atmosphere workflows.
+
+FIXME Need to adopt a convention for air mass when zenith is greater than 90 degrees.
+"""
 
 import typing
 from dataclasses import dataclass
@@ -84,6 +88,21 @@ class Irradiances(ArrayWithUnits):
 
 
 @dataclass(frozen=True)
+class IrradiancesNonPhysical(ArrayWithUnits):
+    """Irradiance array with units. Possibly negative."""
+
+    units: typing.Literal["W m-2"]
+
+    def __post_init__(self) -> None:
+        """Validation."""
+
+        super().__post_init__()
+
+        if self.units not in ("W m-2",):
+            raise ValueError("Irradiance units must be W m-2.")
+
+
+@dataclass(frozen=True)
 class Albedos(ArrayUnitless):
     """Albedo array (unitless, not percentage)."""
 
@@ -118,9 +137,6 @@ class RelativeAirMasses(ArrayUnitless):
             raise ValueError(
                 "Relative air masses are not all greater than or equal to one."
             )
-
-
-# FIXME Need to adopt a convention for air mass when zenith is greater than 90 degrees.
 
 
 class SupportsComputeRelativeAirMassFromSunZenith(typing.Protocol):

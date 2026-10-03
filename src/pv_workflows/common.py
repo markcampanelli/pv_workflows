@@ -266,13 +266,15 @@ class ElevationAngles(Angles):
         super().__post_init__()
 
         if self.units in ("rad"):
-            if XP.any(self.to_deg.value < 0) or XP.any(self.to_deg.value > math.pi):
+            if XP.any(self.to_deg.value < -math.pi) or XP.any(
+                self.to_deg.value > math.pi
+            ):
                 raise ValueError(
                     "Elevation angles are not all between zero and pi radians, "
                     "inclusive."
                 )
         else:
-            if XP.any(self.value < 0) or XP.any(self.value > 180):
+            if XP.any(self.value < -90) or XP.any(self.value > 90):
                 raise ValueError(
                     "Elevation angles are not all between zero and 180 degrees, "
                     "inclusive."

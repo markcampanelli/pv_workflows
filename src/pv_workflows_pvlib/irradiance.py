@@ -9,7 +9,13 @@ import pvlib
 import scipy.interpolate
 
 from pv_workflows import XP
-from pv_workflows.atmosphere import Albedos, Irradiance, Irradiances, RelativeAirMasses
+from pv_workflows.atmosphere import (
+    Albedos,
+    Irradiance,
+    Irradiances,
+    IrradiancesNonPhysical,
+    RelativeAirMasses,
+)
 from pv_workflows.common import (
     Angle,
     AzimuthAngles,
@@ -297,7 +303,9 @@ def compute_poa_irradiance_components_perez_allsitescomposite1990(
             value=XP.asarray(result["poa_circumsolar"]), units=units
         ),
         isotropic=Irradiances(value=XP.asarray(result["poa_isotropic"]), units=units),
-        horizon=Irradiances(value=XP.asarray(result["poa_horizon"]), units=units),
+        horizon=IrradiancesNonPhysical(
+            value=XP.asarray(result["poa_horizon"]), units=units
+        ),
         ground=Irradiances(value=XP.asarray(poa_ground_diffuse), units=units),
     )
 
@@ -329,7 +337,7 @@ def compute_poa_irradiance_components_perez_driesse(
         numpy.asarray(sun_zenith_apparent.to_deg.value),
         numpy.asarray(sun_azimuth.to_deg.value),
     )
-    poa_direct = dni.value * aoi_cosine
+    poa_direct = dni.value * numpy.maximum(0, aoi_cosine)
 
     result = pvlib.irradiance.perez_driesse(
         numpy.asarray(poa_tilt.to_deg.value),
@@ -356,7 +364,9 @@ def compute_poa_irradiance_components_perez_driesse(
             value=XP.asarray(result["poa_circumsolar"]), units=units
         ),
         isotropic=Irradiances(value=XP.asarray(result["poa_isotropic"]), units=units),
-        horizon=Irradiances(value=XP.asarray(result["poa_horizon"]), units=units),
+        horizon=IrradiancesNonPhysical(
+            value=XP.asarray(result["poa_horizon"]), units=units
+        ),
         ground=Irradiances(value=XP.asarray(poa_ground_diffuse), units=units),
     )
 

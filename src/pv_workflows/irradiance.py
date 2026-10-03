@@ -1,4 +1,8 @@
-"""Plane-of-array (POA) irradiance workflows."""
+"""
+Plane-of-array (POA) irradiance workflows.
+
+FIXME How to extend for backside irradiance for bifacials?
+"""
 
 import collections.abc
 import math
@@ -9,7 +13,12 @@ from functools import cached_property, reduce
 import scipy.interpolate
 
 from pv_workflows import XP
-from pv_workflows.atmosphere import Albedos, Irradiances, RelativeAirMasses
+from pv_workflows.atmosphere import (
+    Albedos,
+    Irradiances,
+    IrradiancesNonPhysical,
+    RelativeAirMasses,
+)
 from pv_workflows.common import (
     Angles,
     ArrayUnitless,
@@ -47,7 +56,6 @@ class SupportsDecomposeGhiFromSunZenith(typing.Protocol):
     Interface for callables that compute decompositions using (true) zenith of the Sun.
     """
 
-    # FIXME Input angle should be validated for proper ranges.
     def __call__(
         self,
         *,
@@ -68,7 +76,7 @@ class IrradianceComponents:
     direct: Irradiances
     circumsolar: Irradiances
     isotropic: Irradiances
-    horizon: Irradiances
+    horizon: IrradiancesNonPhysical
     ground: Irradiances
 
     @cached_property
@@ -97,8 +105,6 @@ class PoaIrradianceComponents(IrradianceComponents):
 class SupportsComputePoaIrradianceComponents(typing.Protocol):
     """Interface for callables that compute POA-irradiance components."""
 
-    # FIXME Algorithms may return negative DHI, which is currently invalid irradiance.
-    # FIXME How does this generalize for backside irradiance?
     def __call__(
         self,
         *,
@@ -210,7 +216,6 @@ class SupportsComputePoaComponentIamFromIncidentAngle(typing.Protocol):
     of sun disk) components.
     """
 
-    # FIXME How does this generalize for backside irradiance?
     def __call__(
         self,
         *,
@@ -265,7 +270,6 @@ class SupportsComputePoaComponentIamFromTiltAngle(typing.Protocol):
     from POA tilt angle, such as for isotropic, horizon, or ground components.
     """
 
-    # FIXME How does this generalize for backside irradiance?
     def __call__(
         self,
         *,
@@ -298,7 +302,6 @@ class EffectivePoaIrradianceComponents(IrradianceComponents):
 class SupportsComputeEffectivePoaIrradiance(typing.Protocol):
     """Interface for callables that compute effective POA irradiance."""
 
-    # FIXME How does this generalize for backside irradiance?
     def __call__(
         self,
         *,
@@ -353,7 +356,7 @@ def compute_effective_poa_irradiance_components(
             * poa_irradiance_components.isotropic.value,
             units=units,
         ),
-        horizon=Irradiances(
+        horizon=IrradiancesNonPhysical(
             value=derate
             * poa_iam_components.horizon.value
             * poa_irradiance_components.horizon.value,
