@@ -62,7 +62,7 @@ def compute_cell_temperature_heat_balance(
     *,
     dry_bulb_temperature: Temperatures,
     poa_irradiance: Irradiances,
-    wind_speed: WindSpeeds,
+    wind_speed: WindSpeeds,  # TODO How to ensure this is at proper height?
     thermal_conduction_coefficient: Uc,
     thermal_convection_coefficient: Uv,
     **_: typing.Any,

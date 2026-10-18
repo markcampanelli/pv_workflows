@@ -20,6 +20,7 @@ from pv_workflows.common import (
     Angle,
     AzimuthAngles,
     Cosine,
+    Cosines,
     TiltAngles,
     Timestamps,
     ZenithAngles,
@@ -269,13 +270,15 @@ def compute_poa_irradiance_components_perez_allsitescomposite1990(
     Implements pv_workflows.irradiance.SupportsComputePoaIrradianceComponents.
     """
 
-    aoi_cosine = pvlib.irradiance.aoi_projection(
-        numpy.asarray(poa_tilt.to_deg.value),
-        numpy.asarray(poa_azimuth.to_deg.value),
-        numpy.asarray(sun_zenith_apparent.to_deg.value),
-        numpy.asarray(sun_azimuth.to_deg.value),
+    aoi_cosine = Cosines(
+        pvlib.irradiance.aoi_projection(
+            numpy.asarray(poa_tilt.to_deg.value),
+            numpy.asarray(poa_azimuth.to_deg.value),
+            numpy.asarray(sun_zenith_apparent.to_deg.value),
+            numpy.asarray(sun_azimuth.to_deg.value),
+        )
     )
-    poa_direct = dni.value * aoi_cosine
+    poa_direct = dni.value * numpy.maximum(0, aoi_cosine.value)
 
     result = pvlib.irradiance.perez(
         numpy.asarray(poa_tilt.to_deg.value),
@@ -331,15 +334,17 @@ def compute_poa_irradiance_components_perez_driesse(
     Implements pv_workflows.irradiance.SupportsComputePoaIrradianceComponents.
     """
 
-    aoi_cosine = pvlib.irradiance.aoi_projection(
-        numpy.asarray(poa_tilt.to_deg.value),
-        numpy.asarray(poa_azimuth.to_deg.value),
-        numpy.asarray(sun_zenith_apparent.to_deg.value),
-        numpy.asarray(sun_azimuth.to_deg.value),
+    aoi_cosine = Cosines(
+        value=pvlib.irradiance.aoi_projection(
+            numpy.asarray(poa_tilt.to_deg.value),
+            numpy.asarray(poa_azimuth.to_deg.value),
+            numpy.asarray(sun_zenith_apparent.to_deg.value),
+            numpy.asarray(sun_azimuth.to_deg.value),
+        ),
     )
-    poa_direct = dni.value * numpy.maximum(0, aoi_cosine)
+    poa_direct = dni.value * numpy.maximum(0, aoi_cosine.value)
 
-    result = pvlib.irradiance.perez_driesse(
+    perez_driesse_result = pvlib.irradiance.perez_driesse(
         numpy.asarray(poa_tilt.to_deg.value),
         numpy.asarray(poa_azimuth.to_deg.value),
         numpy.asarray(dhi.value),
@@ -361,11 +366,13 @@ def compute_poa_irradiance_components_perez_driesse(
     return PoaIrradianceComponents(
         direct=Irradiances(value=poa_direct, units=units),
         circumsolar=Irradiances(
-            value=XP.asarray(result["poa_circumsolar"]), units=units
+            value=XP.asarray(perez_driesse_result["poa_circumsolar"]), units=units
         ),
-        isotropic=Irradiances(value=XP.asarray(result["poa_isotropic"]), units=units),
+        isotropic=Irradiances(
+            value=XP.asarray(perez_driesse_result["poa_isotropic"]), units=units
+        ),
         horizon=IrradiancesNonPhysical(
-            value=XP.asarray(result["poa_horizon"]), units=units
+            value=XP.asarray(perez_driesse_result["poa_horizon"]), units=units
         ),
         ground=Irradiances(value=XP.asarray(poa_ground_diffuse), units=units),
     )

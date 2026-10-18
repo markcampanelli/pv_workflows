@@ -212,17 +212,6 @@ print(f"POA irradiance total:\n{poa_irradiance_components.total}")
 
 print()
 
-cell_temperature = pv_workflows.temperature.compute_cell_temperature_heat_balance(
-    dry_bulb_temperature=weather["dry_bulb_temperature"],
-    wind_speed=weather["wind_speed"],
-    poa_irradiance=poa_irradiance_components.total,
-    **heat_balance_coefficients,  # Contains only thermal_conduction_coefficient and thermal_convection_coefficient.
-)
-
-print(f"Cell temperature from heat balance:\n{cell_temperature}")
-
-print()
-
 compute_iam_from_incident_angle = (
     pv_workflows.irradiance.construct_compute_iam_from_incident_angle_pchip(
         **iam_profile
@@ -302,5 +291,16 @@ print(
     "Effective POA irradiance total, no losses, excluding IAM effects:\n"
     f"{effective_poa_irradiance_components_no_iam.total}"
 )
+
+print()
+
+cell_temperature = pv_workflows.temperature.compute_cell_temperature_heat_balance(
+    dry_bulb_temperature=weather["dry_bulb_temperature"],
+    wind_speed=weather["wind_speed"],
+    poa_irradiance=poa_irradiance_components.total,
+    **heat_balance_coefficients,  # Contains only thermal_conduction_coefficient and thermal_convection_coefficient.
+)
+
+print(f"Cell temperature from heat balance:\n{cell_temperature}")
 
 print()
