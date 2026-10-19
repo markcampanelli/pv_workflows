@@ -17,7 +17,7 @@ from pv_workflows.common import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Pressures(ArrayWithUnits):
     """Pressure array with units."""
 
@@ -32,7 +32,7 @@ class Pressures(ArrayWithUnits):
             raise ValueError("Pressure units are not Pa.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class WindSpeeds(ArrayWithUnits):
     """Wind speed array with units and at specified height."""
 
@@ -51,7 +51,7 @@ class WindSpeeds(ArrayWithUnits):
             raise ValueError("Wind speeds are not all non-negative.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Irradiance(ScalarWithUnits):
     """Irradiance value with units."""
 
@@ -69,7 +69,7 @@ class Irradiance(ScalarWithUnits):
             raise ValueError("Irradiance is not non-negative.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Irradiances(ArrayWithUnits):
     """Irradiance array with units."""
 
@@ -87,7 +87,7 @@ class Irradiances(ArrayWithUnits):
             raise ValueError("Irradiances are not all non-negative.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class IrradiancesNonPhysical(ArrayWithUnits):
     """Irradiance array with units. Possibly negative."""
 
@@ -102,7 +102,7 @@ class IrradiancesNonPhysical(ArrayWithUnits):
             raise ValueError("Irradiance units must be W m-2.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Albedos(ArrayUnitless):
     """Albedo array (unitless, not percentage)."""
 
@@ -113,7 +113,7 @@ class Albedos(ArrayUnitless):
             raise ValueError("Albedos are not all between zero and one, inclusive.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class AbsoluteAirMasses(ArrayUnitless):
     """Absolute air-mass array (unitless)."""
 
@@ -126,7 +126,7 @@ class AbsoluteAirMasses(ArrayUnitless):
             raise ValueError("Absolute air masses are not all greater than zero.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class RelativeAirMasses(ArrayUnitless):
     """Relative air-mass array (unitless)."""
 

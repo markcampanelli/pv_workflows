@@ -8,7 +8,7 @@ from pv_workflows.common import ScalarWithUnits, Temperatures
 from pv_workflows.irradiance import Irradiances
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Uc(ScalarWithUnits):
     """Thermal-conduction coefficient value (positive) with units."""
 
@@ -24,7 +24,7 @@ class Uc(ScalarWithUnits):
             raise ValueError("Uc is non-positive.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Uv(ScalarWithUnits):
     """Thermal-convection coefficient value (non-negative) with units."""
 

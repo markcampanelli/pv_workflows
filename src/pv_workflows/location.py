@@ -12,7 +12,7 @@ from pv_workflows.common import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Latitude(ScalarWithUnits):
     """Latitude on Earth."""
 
@@ -31,7 +31,7 @@ class Latitude(ScalarWithUnits):
             raise ValueError("Latitude units must be deg or °.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Longitude(ScalarWithUnits):
     """Longitude on Earth."""
 
@@ -50,7 +50,7 @@ class Longitude(ScalarWithUnits):
             raise ValueError("Longitude units must be deg or °.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Altitude(ScalarWithUnits):
     """Altitude on Earth relative to mean sea level."""
 
@@ -63,7 +63,7 @@ class Altitude(ScalarWithUnits):
             raise ValueError("altitude units must be m.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SunPosition:
     """Position of Sun from time and location on Earth."""
 

@@ -43,7 +43,7 @@ class SupportsComputeExtraterrestrialDni(typing.Protocol):
         """Compute extraterrestrial DNI from time and (optional) solar constant."""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class GhiDecomposition:
     """Interface for result of computing GHI-decomposition."""
 
@@ -69,7 +69,7 @@ class SupportsDecomposeGhiFromSunZenith(typing.Protocol):
         """
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class IrradianceComponents:
     """Interface for result of computing irradance components."""
 
@@ -97,7 +97,7 @@ class IrradianceComponents:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class PoaIrradianceComponents(IrradianceComponents):
     """Interface for result of computing POA-irradance components."""
 
@@ -126,7 +126,7 @@ class SupportsComputePoaIrradianceComponents(typing.Protocol):
 # TODO Add SupportsComponentizePoaIrradiance.
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class IncidentAngles(Angles):
     """Incident-angle array with units."""
 
@@ -149,7 +149,7 @@ class IncidentAngles(Angles):
                 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class IncidentAngleModifiers(ArrayUnitless):
     """Incident-angle modifier array (unitless between zero and one)."""
 
@@ -283,7 +283,7 @@ class SupportsComputePoaComponentIamFromTiltAngle(typing.Protocol):
         """
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class PoaIamComponents:
     """Incident-angle modifier (IAM) components at plane of array (POA)."""
 
@@ -294,7 +294,7 @@ class PoaIamComponents:
     ground: IncidentAngleModifiers
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class EffectivePoaIrradianceComponents(IrradianceComponents):
     """Interface for result of computing effective POA-irradance components."""
 

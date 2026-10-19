@@ -16,7 +16,7 @@ from pv_workflows import XP
 _ABS_ZERO_DEGC = scipy.constants.convert_temperature(0, "Kelvin", "Celsius")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ScalarWithUnits:
     """A numeric scalar with units."""
 
@@ -30,7 +30,7 @@ class ScalarWithUnits:
             raise ValueError("Empty units specified.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ScalarPercentage:
     """A numeric value with percentage units."""
 
@@ -44,7 +44,7 @@ class ScalarPercentage:
         return ScalarUnitless(value=self.value / 100)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ScalarUnitless:
     """A numeric value without units."""
 
@@ -58,7 +58,7 @@ class ScalarUnitless:
         return ScalarPercentage(value=100 * self.value)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ArrayWithUnits:
     """A numeric Python-Array-API array with units."""
 
@@ -72,7 +72,7 @@ class ArrayWithUnits:
             raise ValueError("Empty units specified.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ArrayPercentage:
     """A numeric Python-Array-API array with units."""
 
@@ -86,7 +86,7 @@ class ArrayPercentage:
         return ArrayUnitless(value=self.value / 100)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ArrayUnitless:
     """A numeric Python-Array-API array without units."""
 
@@ -100,7 +100,7 @@ class ArrayUnitless:
         return ArrayPercentage(value=100 * self.value)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Timestamps:
     """Timestamp sequence with timezone."""
 
@@ -127,7 +127,7 @@ class Timestamps:
         return self.sequence[0].tzinfo
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Angle(ScalarWithUnits):
     """Angle value with units."""
 
@@ -162,7 +162,7 @@ class Angle(ScalarWithUnits):
         return self.__class__(value=math.pi / 180.0 * self.value, units="rad")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Cosine(ScalarUnitless):
     """Unitless cosine of angle value."""
 
@@ -175,7 +175,7 @@ class Cosine(ScalarUnitless):
             raise ValueError("Cosine is not between negative one and one, inclusive.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Angles(ArrayWithUnits):
     """Angle array with units."""
 
@@ -210,7 +210,7 @@ class Angles(ArrayWithUnits):
         return self.__class__(value=math.pi / 180.0 * self.value, units="rad")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class AzimuthAngles(Angles):
     """Azimuth-angle array with units."""
 
@@ -235,7 +235,7 @@ class AzimuthAngles(Angles):
                 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ZenithAngles(Angles):
     """Zenith-angle array with units."""
 
@@ -256,7 +256,7 @@ class ZenithAngles(Angles):
                 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ElevationAngles(Angles):
     """Elevation-angle array with units."""
 
@@ -281,7 +281,7 @@ class ElevationAngles(Angles):
                 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TiltAngles(Angles):
     """Tilt-angle array with units."""
 
@@ -302,7 +302,7 @@ class TiltAngles(Angles):
                 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Cosines(ArrayUnitless):
     """Unitless cosines of angles array."""
 
@@ -315,7 +315,7 @@ class Cosines(ArrayUnitless):
             )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Height(ScalarWithUnits):
     """Height value (non-negative) with units."""
 
@@ -333,7 +333,7 @@ class Height(ScalarWithUnits):
             raise ValueError("Height is negative.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Temperature(ScalarWithUnits):
     """Temperature value with units."""
 
@@ -379,7 +379,7 @@ class Temperature(ScalarWithUnits):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Temperatures(ArrayWithUnits):
     """Temperature array with units."""
 
@@ -425,7 +425,7 @@ class Temperatures(ArrayWithUnits):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Absorption(ScalarUnitless):
     """Absorption value (unitless, not percentage)."""
 
@@ -438,7 +438,7 @@ class Absorption(ScalarUnitless):
             raise ValueError("Absorption is not between zero and one, inclusive.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Efficiency(ScalarUnitless):
     """Efficiency value (unitless, not percentage)."""
 
@@ -451,7 +451,7 @@ class Efficiency(ScalarUnitless):
             raise ValueError("Efficiency is not between zero and one, inclusive.")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Losses(ArrayUnitless):
     """A bounded loss array (unitless)."""
 
