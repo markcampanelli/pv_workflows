@@ -64,7 +64,10 @@ timestamp = pv_workflows.common.Timestamps(
 location = {
     "latitude": pv_workflows.location.Latitude(value=45.677, units="deg"),
     "longitude": pv_workflows.location.Longitude(value=-111.043, units="deg"),
-    "altitude": pv_workflows.location.Altitude(value=4820, units="m"),
+    "altitude": pv_workflows.location.Altitude(
+        value=0.3048 * 4820,  # ft to m
+        units="m",
+    ),
 }
 poa_geometry = {
     "poa_tilt": pv_workflows.common.TiltAngles(
@@ -148,9 +151,12 @@ iam_profile = {
 
 print()
 
+# Sun position at site's altitude.
 sun_position = pv_workflows_pvlib.location.compute_sun_position_nrel_numpy(
     timestamp=timestamp,
-    **location,  # Contains only latitude, longitude, and altitude.
+    latitude=location["latitude"],
+    longitude=location["longitude"],
+    altitude=location["altitude"],
     dry_bulb_temperature=weather["dry_bulb_temperature"],
     pressure=weather["pressure"],
 )
@@ -176,17 +182,9 @@ extraterrestrial_dni = (
     )
 )
 
-# TODO It's unclear if using sun position at sea level is technically correct here.
-sun_position_sea_level = pv_workflows_pvlib.location.compute_sun_position_nrel_numpy(
-    timestamp=timestamp,
-    latitude=location["latitude"],
-    longitude=location["longitude"],
-    altitude=pv_workflows.location.Altitude(value=0, units="m"),
-    dry_bulb_temperature=weather["dry_bulb_temperature"],
-    pressure=weather["pressure"],
-)
-
-# Compute relative air mass (at sea level).
+# Technically, this relative air mass should be computed using the apparent zenith at
+# sea level, but using the already-computed site altitude does not appear to impart any
+# significant errors in subsequent computations.
 relative_air_mass = (
     pv_workflows_pvlib.atmosphere.compute_relative_air_mass_kastenyoung1989(
         sun_zenith_apparent=sun_position.zenith_apparent,
@@ -196,8 +194,8 @@ relative_air_mass = (
 poa_irradiance_components = (
     pv_workflows_pvlib.irradiance.compute_poa_irradiance_components_perez_driesse(
         **poa_geometry,  # Contains only poa_tilt and poa_azimuth.
-        sun_zenith_apparent=sun_position_sea_level.zenith_apparent,
-        sun_azimuth=sun_position_sea_level.azimuth,
+        sun_zenith_apparent=sun_position.zenith_apparent,
+        sun_azimuth=sun_position.azimuth,
         dhi=decomposition.dhi,
         dni=decomposition.dni,
         extraterrestrial_dni=extraterrestrial_dni,
@@ -255,11 +253,11 @@ effective_poa_irradiance_components = (
 )
 
 print(
-    "Effective POA irradiance components, no losses, including IAM effects:\n"
+    "Effective POA irradiance components including IAM effects, but no losses:\n"
     f"{effective_poa_irradiance_components}"
 )
 print(
-    "Effective POA irradiance total, no losses, including IAM effects:\n"
+    "Effective POA irradiance total including IAM effects, but no losses:\n"
     f"{effective_poa_irradiance_components.total}"
 )
 

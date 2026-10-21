@@ -120,8 +120,6 @@ class AbsoluteAirMasses(ArrayUnitless):
     def __post_init__(self) -> None:
         """Validation."""
 
-        super().__post_init__()
-
         if XP.any(self.value <= 0):
             raise ValueError("Absolute air masses are not all greater than zero.")
 
